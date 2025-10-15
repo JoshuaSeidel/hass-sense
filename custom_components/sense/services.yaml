@@ -1,0 +1,43 @@
+get_device_info:
+  name: Get Device Info
+  description: Get detailed information about a specific Sense device.
+  fields:
+    device_id:
+      name: Device ID
+      description: The ID of the device to get information for.
+      required: true
+      example: "abc123def456"
+      selector:
+        text:
+
+reset_device:
+  name: Reset Device
+  description: Reset a device (remove it from learned devices).
+  fields:
+    device_id:
+      name: Device ID
+      description: The ID of the device to reset.
+      required: true
+      example: "abc123def456"
+      selector:
+        text:
+
+rename_device:
+  name: Rename Device
+  description: Rename a detected device.
+  fields:
+    device_id:
+      name: Device ID
+      description: The ID of the device to rename.
+      required: true
+      example: "abc123def456"
+      selector:
+        text:
+    name:
+      name: New Name
+      description: The new name for the device.
+      required: true
+      example: "Living Room Lamp"
+      selector:
+        text:
+

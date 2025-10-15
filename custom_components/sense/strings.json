@@ -1,0 +1,67 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Sense Energy Monitor",
+        "description": "Enter your Sense account credentials to connect your Energy Monitor.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "timeout": "Timeout (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Sense. Please check your internet connection.",
+      "invalid_auth": "Invalid email or password. Please try again.",
+      "unknown": "An unexpected error occurred. Please try again."
+    },
+    "abort": {
+      "already_configured": "This Sense account is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "active_power": {
+        "name": "Active Power"
+      },
+      "active_solar_power": {
+        "name": "Solar Power"
+      },
+      "voltage_l1": {
+        "name": "Voltage L1"
+      },
+      "voltage_l2": {
+        "name": "Voltage L2"
+      },
+      "frequency": {
+        "name": "Frequency"
+      },
+      "daily_usage": {
+        "name": "Daily Usage"
+      },
+      "daily_production": {
+        "name": "Daily Production"
+      },
+      "weekly_usage": {
+        "name": "Weekly Usage"
+      },
+      "weekly_production": {
+        "name": "Weekly Production"
+      },
+      "monthly_usage": {
+        "name": "Monthly Usage"
+      },
+      "monthly_production": {
+        "name": "Monthly Production"
+      },
+      "yearly_usage": {
+        "name": "Yearly Usage"
+      },
+      "yearly_production": {
+        "name": "Yearly Production"
+      }
+    }
+  }
+}
+

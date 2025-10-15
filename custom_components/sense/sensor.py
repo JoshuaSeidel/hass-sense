@@ -1,0 +1,239 @@
+"""Sensor platform for Sense Energy Monitor."""
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+import logging
+
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorEntityDescription,
+    SensorStateClass,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    PERCENTAGE,
+    UnitOfEnergy,
+    UnitOfPower,
+    UnitOfElectricPotential,
+    UnitOfFrequency,
+)
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import StateType
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from .const import (
+    DOMAIN,
+    ATTRIBUTION,
+    ICON_POWER,
+    ICON_SOLAR,
+    ICON_ENERGY,
+    ICON_VOLTAGE,
+    ICON_FREQUENCY,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class SenseSensorEntityDescription(SensorEntityDescription):
+    """Describes Sense sensor entity."""
+
+    value_fn: Callable[[dict], StateType] = lambda data: None
+
+
+SENSOR_TYPES: tuple[SenseSensorEntityDescription, ...] = (
+    # Real-time Power Sensors
+    SenseSensorEntityDescription(
+        key="active_power",
+        translation_key="active_power",
+        name="Active Power",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon=ICON_POWER,
+        value_fn=lambda data: data.get("active_power", 0),
+    ),
+    SenseSensorEntityDescription(
+        key="active_solar_power",
+        translation_key="active_solar_power",
+        name="Active Solar Power",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon=ICON_SOLAR,
+        value_fn=lambda data: data.get("active_solar_power", 0),
+    ),
+    # Voltage Sensors
+    SenseSensorEntityDescription(
+        key="voltage_l1",
+        translation_key="voltage_l1",
+        name="Voltage L1",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon=ICON_VOLTAGE,
+        value_fn=lambda data: data.get("voltage", [])[0] if len(data.get("voltage", [])) > 0 else None,
+    ),
+    SenseSensorEntityDescription(
+        key="voltage_l2",
+        translation_key="voltage_l2",
+        name="Voltage L2",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon=ICON_VOLTAGE,
+        value_fn=lambda data: data.get("voltage", [])[1] if len(data.get("voltage", [])) > 1 else None,
+    ),
+    # Frequency Sensor
+    SenseSensorEntityDescription(
+        key="frequency",
+        translation_key="frequency",
+        name="Frequency",
+        native_unit_of_measurement=UnitOfFrequency.HERTZ,
+        device_class=SensorDeviceClass.FREQUENCY,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon=ICON_FREQUENCY,
+        value_fn=lambda data: data.get("hz", 0),
+    ),
+    # Daily Energy Sensors
+    SenseSensorEntityDescription(
+        key="daily_usage",
+        translation_key="daily_usage",
+        name="Daily Usage",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon=ICON_ENERGY,
+        value_fn=lambda data: data.get("daily_usage", 0),
+    ),
+    SenseSensorEntityDescription(
+        key="daily_production",
+        translation_key="daily_production",
+        name="Daily Production",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon=ICON_SOLAR,
+        value_fn=lambda data: data.get("daily_production", 0),
+    ),
+    # Weekly Energy Sensors
+    SenseSensorEntityDescription(
+        key="weekly_usage",
+        translation_key="weekly_usage",
+        name="Weekly Usage",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon=ICON_ENERGY,
+        value_fn=lambda data: data.get("weekly_usage", 0),
+    ),
+    SenseSensorEntityDescription(
+        key="weekly_production",
+        translation_key="weekly_production",
+        name="Weekly Production",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon=ICON_SOLAR,
+        value_fn=lambda data: data.get("weekly_production", 0),
+    ),
+    # Monthly Energy Sensors
+    SenseSensorEntityDescription(
+        key="monthly_usage",
+        translation_key="monthly_usage",
+        name="Monthly Usage",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon=ICON_ENERGY,
+        value_fn=lambda data: data.get("monthly_usage", 0),
+    ),
+    SenseSensorEntityDescription(
+        key="monthly_production",
+        translation_key="monthly_production",
+        name="Monthly Production",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon=ICON_SOLAR,
+        value_fn=lambda data: data.get("monthly_production", 0),
+    ),
+    # Yearly Energy Sensors
+    SenseSensorEntityDescription(
+        key="yearly_usage",
+        translation_key="yearly_usage",
+        name="Yearly Usage",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon=ICON_ENERGY,
+        value_fn=lambda data: data.get("yearly_usage", 0),
+    ),
+    SenseSensorEntityDescription(
+        key="yearly_production",
+        translation_key="yearly_production",
+        name="Yearly Production",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon=ICON_SOLAR,
+        value_fn=lambda data: data.get("yearly_production", 0),
+    ),
+)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Sense sensors based on a config entry."""
+    coordinator = hass.data[DOMAIN][config_entry.entry_id]["coordinator"]
+    gateway = hass.data[DOMAIN][config_entry.entry_id]["gateway"]
+
+    # Add main sensors
+    entities = [
+        SenseSensor(coordinator, description, gateway.sense_monitor_id)
+        for description in SENSOR_TYPES
+    ]
+
+    async_add_entities(entities)
+
+
+class SenseSensor(CoordinatorEntity, SensorEntity):
+    """Representation of a Sense sensor."""
+
+    entity_description: SenseSensorEntityDescription
+    _attr_has_entity_name = True
+    _attr_attribution = ATTRIBUTION
+
+    def __init__(
+        self,
+        coordinator,
+        description: SenseSensorEntityDescription,
+        monitor_id: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{monitor_id}_{description.key}"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, monitor_id)},
+            "name": "Sense Energy Monitor",
+            "manufacturer": "Sense",
+            "model": "Energy Monitor",
+        }
+
+    @property
+    def native_value(self) -> StateType:
+        """Return the state of the sensor."""
+        return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return self.coordinator.last_update_success and self.coordinator.data is not None
+
