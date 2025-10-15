@@ -76,12 +76,18 @@ class SenseableAsync:
             "email": self.username,
             "password": self.password,
         }
+        
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "Home-Assistant-Sense/1.0.0",
+        }
 
         try:
             async with asyncio.timeout(self.timeout):
                 async with session.post(
                     f"{API_URL}/authenticate",
-                    json=auth_data,
+                    data=auth_data,
+                    headers=headers,
                 ) as response:
                     response.raise_for_status()
                     data = await response.json()
