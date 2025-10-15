@@ -164,43 +164,45 @@ class SenseableAsync:
 
     async def update_trend_data(self) -> None:
         """Get trend data (daily, weekly, monthly, yearly)."""
-        # Get daily stats
-        daily_data = await self._api_call(
-            "GET",
-            f"app/history/trends?monitor_id={self.sense_monitor_id}&scale=DAY"
-        )
-        if daily_data and "consumption" in daily_data:
-            self.daily_usage = daily_data["consumption"].get("total", 0)
-            self.daily_production = daily_data.get("production", {}).get("total", 0)
+        try:
+            # Try the newer timeline endpoint first
+            timeline_data = await self._api_call(
+                "GET",
+                f"users/{self.sense_user_id}/timeline"
+            )
+            if timeline_data:
+                # Extract daily/weekly/monthly data from timeline
+                self.daily_usage = timeline_data.get("daily_consumption", 0)
+                self.daily_production = timeline_data.get("daily_production", 0)
+                _LOGGER.debug("Updated trend data from timeline endpoint")
+                return
+        except Exception as err:
+            _LOGGER.debug("Timeline endpoint not available, trying trends: %s", err)
 
-        # Get weekly stats
-        weekly_data = await self._api_call(
-            "GET",
-            f"app/history/trends?monitor_id={self.sense_monitor_id}&scale=WEEK"
-        )
-        if weekly_data and "consumption" in weekly_data:
-            self.weekly_usage = weekly_data["consumption"].get("total", 0)
-            self.weekly_production = weekly_data.get("production", {}).get("total", 0)
+        # Fallback to trends endpoint with better error handling
+        scales = {
+            "DAY": ("daily_usage", "daily_production"),
+            "WEEK": ("weekly_usage", "weekly_production"), 
+            "MONTH": ("monthly_usage", "monthly_production"),
+            "YEAR": ("yearly_usage", "yearly_production"),
+        }
 
-        # Get monthly stats
-        monthly_data = await self._api_call(
-            "GET",
-            f"app/history/trends?monitor_id={self.sense_monitor_id}&scale=MONTH"
-        )
-        if monthly_data and "consumption" in monthly_data:
-            self.monthly_usage = monthly_data["consumption"].get("total", 0)
-            self.monthly_production = monthly_data.get("production", {}).get("total", 0)
+        for scale, (usage_attr, production_attr) in scales.items():
+            try:
+                data = await self._api_call(
+                    "GET",
+                    f"app/history/trends?monitor_id={self.sense_monitor_id}&scale={scale}"
+                )
+                if data and "consumption" in data:
+                    setattr(self, usage_attr, data["consumption"].get("total", 0))
+                    setattr(self, production_attr, data.get("production", {}).get("total", 0))
+                    _LOGGER.debug("Updated %s trend data", scale.lower())
+            except Exception as err:
+                _LOGGER.warning("Failed to get %s trend data: %s", scale.lower(), err)
+                # Keep existing values on error
+                continue
 
-        # Get yearly stats
-        yearly_data = await self._api_call(
-            "GET",
-            f"app/history/trends?monitor_id={self.sense_monitor_id}&scale=YEAR"
-        )
-        if yearly_data and "consumption" in yearly_data:
-            self.yearly_usage = yearly_data["consumption"].get("total", 0)
-            self.yearly_production = yearly_data.get("production", {}).get("total", 0)
-
-        _LOGGER.debug("Updated trend data")
+        _LOGGER.debug("Trend data update completed")
 
     async def get_discovered_device_names(self) -> list[str]:
         """Get list of discovered device names."""

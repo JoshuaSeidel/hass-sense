@@ -49,8 +49,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def async_update_data():
         """Fetch data from Sense."""
         try:
+            # Update realtime data (critical)
             await gateway.update_realtime()
-            await gateway.update_trend_data()
+            
+            # Try to update trend data (non-critical)
+            try:
+                await gateway.update_trend_data()
+            except Exception as trend_err:
+                # Log but don't fail if trend data is unavailable
+                _LOGGER.debug("Trend data update failed (non-critical): %s", trend_err)
+            
             return gateway.get_all_data()
         except SENSE_TIMEOUT_EXCEPTIONS as err:
             raise UpdateFailed(f"Timeout communicating with Sense API: {err}") from err

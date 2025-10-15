@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-10-15
+
+### Fixed
+- Fixed 400 Bad Request error for trend data endpoint
+- Added fallback mechanisms for trend data retrieval
+- Made trend data updates non-critical (won't fail the entire integration if unavailable)
+- Improved error handling and logging for API calls
+
+### Changed
+- Trend data errors are now logged as debug/warnings instead of causing integration failures
+- Real-time power data remains functional even if historical data is unavailable
+
 ## [1.0.1] - 2025-10-15
 
 ### Fixed
