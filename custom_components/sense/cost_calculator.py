@@ -23,30 +23,42 @@ class CostCalculator:
         hass: HomeAssistant,
         energy_rate: float = DEFAULT_RATE,
         solar_credit: float = DEFAULT_SOLAR_CREDIT,
+        distribution_rate: float = 0.0,
         time_of_use: dict | None = None,
     ) -> None:
         """Initialize cost calculator.
         
         Args:
             hass: Home Assistant instance
-            energy_rate: Cost per kWh for consumption
+            energy_rate: Cost per kWh for consumption (generation/supply charge)
             solar_credit: Credit per kWh for solar production
+            distribution_rate: Distribution/delivery/transmission charges per kWh
             time_of_use: Optional TOU rate structure:
                 {
                     "peak": {"rate": 0.20, "hours": [(16, 21)]},
                     "off_peak": {"rate": 0.08, "hours": [(0, 6), (22, 24)]},
                     "standard": {"rate": 0.12}  # default for other hours
                 }
+        
+        NOTE: Calculated costs do NOT include taxes, regulatory fees, 
+        fixed monthly charges, or utility-specific credits. They represent
+        the variable energy charges only.
         """
         self.hass = hass
         self.energy_rate = energy_rate
+        self.distribution_rate = distribution_rate
         self.solar_credit = solar_credit
         self.time_of_use = time_of_use or {}
+    
+    @property
+    def total_rate(self) -> float:
+        """Get total rate (energy + distribution)."""
+        return self.energy_rate + self.distribution_rate
 
     def get_current_rate(self) -> float:
-        """Get current energy rate based on time of use."""
+        """Get current energy rate based on time of use (includes distribution)."""
         if not self.time_of_use:
-            return self.energy_rate
+            return self.total_rate
 
         now = datetime.now()
         current_hour = now.hour
@@ -58,10 +70,11 @@ class CostCalculator:
             
             for start_hour, end_hour in config["hours"]:
                 if start_hour <= current_hour < end_hour:
-                    return config.get("rate", self.energy_rate)
+                    # TOU rate + distribution
+                    return config.get("rate", self.energy_rate) + self.distribution_rate
 
-        # Return standard rate if no TOU period matches
-        return self.time_of_use.get("standard", {}).get("rate", self.energy_rate)
+        # Return standard rate + distribution if no TOU period matches
+        return self.time_of_use.get("standard", {}).get("rate", self.energy_rate) + self.distribution_rate
 
     def calculate_instantaneous_cost(self, power_w: float) -> float:
         """Calculate instantaneous cost per hour at current power draw.

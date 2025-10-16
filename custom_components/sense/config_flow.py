@@ -21,11 +21,13 @@ from .const import (
     SENSE_WEBSOCKET_EXCEPTIONS,
     CONF_REALTIME_UPDATE_RATE,
     CONF_ELECTRICITY_RATE,
+    CONF_DISTRIBUTION_RATE,
     CONF_SOLAR_CREDIT_RATE,
     CONF_CURRENCY,
     ACTIVE_UPDATE_RATE,
     UPDATE_RATE_OPTIONS,
     DEFAULT_ELECTRICITY_RATE,
+    DEFAULT_DISTRIBUTION_RATE,
     DEFAULT_SOLAR_CREDIT_RATE,
     DEFAULT_CURRENCY,
     CURRENCY_OPTIONS,
@@ -157,6 +159,9 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
         electricity_rate = self.config_entry.data.get(
             CONF_ELECTRICITY_RATE, DEFAULT_ELECTRICITY_RATE
         )
+        distribution_rate = self.config_entry.data.get(
+            CONF_DISTRIBUTION_RATE, DEFAULT_DISTRIBUTION_RATE
+        )
         solar_credit_rate = self.config_entry.data.get(
             CONF_SOLAR_CREDIT_RATE, DEFAULT_SOLAR_CREDIT_RATE
         )
@@ -218,6 +223,17 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
             ): selector.NumberSelector(
                 selector.NumberSelectorConfig(
                     min=0.01,
+                    max=1.0,
+                    step=0.01,
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            ),
+            vol.Optional(
+                CONF_DISTRIBUTION_RATE,
+                default=distribution_rate,
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0.0,
                     max=1.0,
                     step=0.01,
                     mode=selector.NumberSelectorMode.BOX,

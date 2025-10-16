@@ -17,8 +17,10 @@ from .const import (
     SENSE_TIMEOUT_EXCEPTIONS,
     SENSE_WEBSOCKET_EXCEPTIONS,
     CONF_ELECTRICITY_RATE,
+    CONF_DISTRIBUTION_RATE,
     CONF_SOLAR_CREDIT_RATE,
     DEFAULT_ELECTRICITY_RATE,
+    DEFAULT_DISTRIBUTION_RATE,
     DEFAULT_SOLAR_CREDIT_RATE,
 )
 from .statistics import SenseAnalytics
@@ -77,8 +79,9 @@ class SenseRealtimeCoordinator(SenseCoordinator):
         
         # Initialize cost calculator with configured rates
         electricity_rate = config_entry.data.get(CONF_ELECTRICITY_RATE, DEFAULT_ELECTRICITY_RATE)
+        distribution_rate = config_entry.data.get(CONF_DISTRIBUTION_RATE, DEFAULT_DISTRIBUTION_RATE)
         solar_credit = config_entry.data.get(CONF_SOLAR_CREDIT_RATE, DEFAULT_SOLAR_CREDIT_RATE)
-        self.cost_calculator = CostCalculator(hass, electricity_rate, solar_credit)
+        self.cost_calculator = CostCalculator(hass, electricity_rate, solar_credit, distribution_rate)
 
     async def _async_update_data(self) -> dict:
         """Retrieve latest realtime state and return data dict."""
@@ -143,8 +146,9 @@ class SenseTrendCoordinator(SenseCoordinator):
         
         # Initialize cost calculator with configured rates
         electricity_rate = config_entry.data.get(CONF_ELECTRICITY_RATE, DEFAULT_ELECTRICITY_RATE)
+        distribution_rate = config_entry.data.get(CONF_DISTRIBUTION_RATE, DEFAULT_DISTRIBUTION_RATE)
         solar_credit = config_entry.data.get(CONF_SOLAR_CREDIT_RATE, DEFAULT_SOLAR_CREDIT_RATE)
-        self.cost_calculator = CostCalculator(hass, electricity_rate, solar_credit)
+        self.cost_calculator = CostCalculator(hass, electricity_rate, solar_credit, distribution_rate)
 
     async def _async_update_data(self) -> dict:
         """Update the trend data and return data dict."""

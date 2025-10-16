@@ -5,6 +5,105 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2025-10-16
+
+### 🎯 Added - Distribution/Delivery Rates & Disclaimer
+
+**More Accurate Cost Tracking!**
+
+Utility bills are complex - they include:
+- ⚡ **Supply/Generation charges** (what you had before)
+- 🚚 **Distribution/Delivery charges** (NEW!)
+- 💸 Taxes & fees (NOT included - see disclaimer)
+
+### Added
+- **Distribution Rate** configuration field
+  - Add delivery, transmission, distribution charges
+  - Separate from supply charges for transparency
+  - Defaults to $0.05/kWh
+- **Disclaimer** in configuration UI
+  - "Cost calculations exclude taxes, fees, and fixed charges"
+  - Honest about what's NOT included
+  - Sets realistic expectations
+
+### Changed
+- **Field Names** - More descriptive:
+  - "Electricity Rate" → "Supply/Generation Rate"
+  - NEW: "Distribution/Delivery Rate"
+- **Descriptions** - Clearer guidance:
+  - Explains what each rate means
+  - Tells users where to find rates on their bill
+  - Suggests entering total rate if bill doesn't break it down
+- **CostCalculator** - Now uses combined rate:
+  - `total_rate = supply_rate + distribution_rate`
+  - All calculations include both charges
+  - More accurate cost predictions
+
+### Technical
+- Added `CONF_DISTRIBUTION_RATE` constant (default: $0.05/kWh)
+- Added `distribution_rate` parameter to `CostCalculator.__init__()`
+- Added `total_rate` property to `CostCalculator`
+- Updated both coordinators to pass distribution rate
+- Updated `get_current_rate()` to include distribution in all scenarios
+- Added disclaimer to docstring and UI
+
+### Example Bill Breakdown
+
+**Before v2.2.1:**
+```
+Electricity Rate: $0.12/kWh  (just supply)
+Total Rate: $0.12/kWh        ❌ Missing delivery charges!
+```
+
+**After v2.2.1:**
+```
+Supply Rate:       $0.12/kWh  (generation/supply)
+Distribution Rate: $0.05/kWh  (delivery/transmission)
+Total Rate:        $0.17/kWh  ✅ Accurate!
+```
+
+**Your actual bill:**
+```
+Supply Charges:     100 kWh × $0.12 = $12.00
+Delivery Charges:   100 kWh × $0.05 =  $5.00
+Taxes & Fees:                         $2.50  ← Not tracked
+Total:                               $19.50
+```
+
+Integration predicts: **$17.00** (close! 👍)
+
+### Configuration UI
+
+**New fields:**
+```
+┌──────────────────────────────────────────┐
+│ Supply/Generation Rate (per kWh)         │
+│ [0.12                                  ] │
+│ ℹ️ Supply or generation charge           │
+│                                          │
+│ Distribution/Delivery Rate (per kWh)     │
+│ [0.05                                  ] │
+│ ℹ️ Distribution/transmission charges     │
+│   If your bill shows total, enter 0     │
+└──────────────────────────────────────────┘
+```
+
+### ⚠️ Important Disclaimer
+
+**Costs calculated by this integration DO NOT include:**
+- ❌ State/local taxes
+- ❌ Regulatory fees
+- ❌ Fixed monthly charges
+- ❌ Demand charges
+- ❌ Utility-specific credits/discounts
+
+**They DO include:**
+- ✅ Variable per-kWh supply charges
+- ✅ Variable per-kWh delivery charges
+- ✅ Solar export credits
+
+This gives you a close estimate but won't match your exact bill!
+
 ## [2.2.0] - 2025-10-16
 
 ### 🎉 Added - Configurable Electricity Rates!
