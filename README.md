@@ -39,10 +39,14 @@ A fully-featured Home Assistant custom integration for the Sense Energy Monitor,
 - `sense.reset_device` - Remove a device from learned devices
 - `sense.rename_device` - Rename detected devices
 
-### ⚡ Performance
-- Cloud polling with 60-second update intervals
+### ⚡ Performance & Real-time Updates
+- **Configurable update intervals** from 5 seconds to 5 minutes
+- **Separate coordinators** for realtime (power, voltage) vs trends (usage history)
+- Default 60-second intervals for realtime, 5-minute intervals for trends
+- **Near real-time monitoring** available (5-10s updates) for power tracking
 - Efficient API calls to minimize rate limiting
 - Automatic reconnection on connection failures
+- **Options flow** to change update rate after setup
 
 ## Installation
 

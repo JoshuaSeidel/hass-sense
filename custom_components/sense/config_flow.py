@@ -13,7 +13,15 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN, DEFAULT_TIMEOUT, SENSE_TIMEOUT_EXCEPTIONS, SENSE_WEBSOCKET_EXCEPTIONS
+from .const import (
+    DOMAIN,
+    DEFAULT_TIMEOUT,
+    SENSE_TIMEOUT_EXCEPTIONS,
+    SENSE_WEBSOCKET_EXCEPTIONS,
+    CONF_REALTIME_UPDATE_RATE,
+    ACTIVE_UPDATE_RATE,
+    UPDATE_RATE_OPTIONS,
+)
 from .sense_api import SenseableAsync
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,6 +31,9 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_EMAIL): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): int,
+        vol.Optional(CONF_REALTIME_UPDATE_RATE, default=ACTIVE_UPDATE_RATE): vol.In(
+            {int(k): v for k, v in UPDATE_RATE_OPTIONS.items()}
+        ),
     }
 )
 
@@ -95,6 +106,47 @@ class SenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_import(self, import_data: dict[str, Any]) -> FlowResult:
         """Handle import from configuration.yaml."""
         return await self.async_step_user(import_data)
+
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return SenseOptionsFlow(config_entry)
+
+
+class SenseOptionsFlow(config_entries.OptionsFlow):
+    """Handle Sense options."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            # Update the config entry with new options
+            self.hass.config_entries.async_update_entry(
+                self.config_entry,
+                data={**self.config_entry.data, **user_input}
+            )
+            return self.async_create_entry(title="", data={})
+
+        current_rate = self.config_entry.data.get(
+            CONF_REALTIME_UPDATE_RATE, ACTIVE_UPDATE_RATE
+        )
+        
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_REALTIME_UPDATE_RATE,
+                        default=current_rate,
+                    ): vol.In({int(k): v for k, v in UPDATE_RATE_OPTIONS.items()}),
+                }
+            ),
+        )
 
 
 class CannotConnect(HomeAssistantError):

@@ -28,9 +28,21 @@ DOMAIN = "sense"
 
 # Configuration
 CONF_MONITOR_ID = "monitor_id"
+CONF_REALTIME_UPDATE_RATE = "realtime_update_rate"
 DEFAULT_TIMEOUT = 30
-ACTIVE_UPDATE_RATE = 60  # seconds
-TREND_UPDATE_RATE = 300  # 5 minutes
+ACTIVE_UPDATE_RATE = 60  # seconds - default for realtime updates
+TREND_UPDATE_RATE = 300  # 5 minutes - for historical data
+
+# Update rate options (seconds)
+UPDATE_RATE_OPTIONS = {
+    "5": "5 seconds (Very Fast - High API usage)",
+    "10": "10 seconds (Fast)",
+    "15": "15 seconds",
+    "30": "30 seconds (Balanced)",
+    "60": "60 seconds (Default)",
+    "120": "2 minutes (Slow)",
+    "300": "5 minutes (Very Slow)",
+}
 
 # Sense Data Keys
 SENSE_ACTIVE_POWER = "active_power"

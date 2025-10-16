@@ -1,0 +1,173 @@
+# Sense Energy Monitor Integration - Agent Instructions
+
+## Project Overview
+This is a Home Assistant custom integration for Sense Energy Monitor that aims to be the **ultimate** Sense integration - matching the official integration's capabilities while adding many innovative features.
+
+**Current Status:** v1.2.2 - Stable and functional
+**Repository:** https://github.com/JoshuaSeidel/hass-sense
+**Release Method:** Git tags + GitHub releases (required for HACS)
+
+## Architecture
+
+### Core Components
+- **`__init__.py`** - Main setup, uses official `sense_energy` library's `ASyncSenseable` class
+- **`sensor.py`** - 14+ energy sensors (power, voltage, frequency, daily/weekly/monthly/yearly)
+- **`binary_sensor.py`** - Device state sensors
+- **`switch.py`** - Device control (unique to us!)
+- **`config_flow.py`** - UI-based configuration
+- **`sense_api.py`** - Fallback if official library unavailable
+- **`const.py`** - Constants and exception definitions
+
+### Key Technical Details
+
+1. **Uses Official Library:** We import and use `sense_energy.ASyncSenseable`
+2. **WebSocket Data:** Realtime power data comes via WebSocket, not REST
+3. **Executor Job:** Gateway creation must use `hass.async_add_executor_job()` (SSL certs are blocking)
+4. **Rate Limiting:** Set `gateway.rate_limit = 60`
+5. **Device Fetching:** Call `gateway.fetch_devices()` before `update_realtime()`
+6. **Exception Classes:** Use `sense_energy` exceptions (SenseAuthenticationException, etc.)
+
+### Current Update Intervals
+- **Realtime:** 60 seconds (power, voltage, active devices)
+- **Trends:** 60 seconds (should be 300s - TODO)
+
+## Release Process
+
+**CRITICAL:** Every code change needs a GitHub release for HACS users!
+
+```bash
+# 1. Update version in manifest.json
+# 2. Update CHANGELOG.md
+# 3. Commit, tag, and push
+git add -A
+git commit -m "vX.X.X: Description"
+git push origin main
+git tag -a vX.X.X -m "vX.X.X: Description"
+git push origin vX.X.X
+
+# 4. CREATE GITHUB RELEASE (required for HACS!)
+gh release create vX.X.X --title "vX.X.X - Title" --notes "Release notes..."
+```
+
+## Known Issues & TODOs
+
+### High Priority
+- [ ] Split into separate coordinators (realtime 60s, trends 300s)
+- [ ] Store auth tokens in config entry (no re-auth on restart)
+- [ ] Use dataclass for runtime data
+- [ ] Faster update intervals (currently 60s, WebSocket could be near real-time)
+
+### Architecture Improvements Needed
+See `IMPLEMENTATION_DIFF.md` for detailed comparison with official integration.
+
+## Our Unique Features (Keep These!)
+1. ✅ Switch platform for device control
+2. ✅ Custom services (get_device_info, reset_device, rename_device)
+3. ✅ Diagnostics support
+4. ✅ Test scripts and debugging tools
+5. ✅ Comprehensive documentation
+
+## Roadmap
+See `ROADMAP.md` for full vision. Key differentiators to add:
+- Real-time data (faster than 60s)
+- Predictive analytics
+- Cost tracking
+- Solar intelligence
+- AI/ML features
+- Gamification
+- Professional tools
+
+## Common Pitfalls
+
+### 1. Missing GitHub Release
+- **Problem:** HACS users can't update
+- **Solution:** ALWAYS create GitHub release after tagging
+
+### 2. Wrong Attribute Names
+- Official library uses: `active_power`, `active_solar_power`, `active_voltage` (not `voltage`)
+- No `active_hz` - use `getattr(gateway, 'hz', 0)`
+- Use `getattr()` with fallbacks for safety
+
+### 3. Blocking I/O
+- Creating `ASyncSenseable` blocks on SSL certs
+- Must use: `await hass.async_add_executor_job(partial(ASyncSenseable, ...))`
+
+### 4. Device List
+- Must call `gateway.fetch_devices()` before first realtime update
+- Devices are objects with `.name` and `.state` attributes
+
+### 5. Exception Handling
+```python
+from sense_energy import (
+    SenseAuthenticationException,
+    SenseMFARequiredException,
+    SenseAPITimeoutException,
+    SenseWebsocketException,
+)
+```
+
+## Testing
+
+The user has a working Sense monitor (ID: 1000005242) and has been testing throughout development.
+
+**Test script:** `custom_components/sense/test_api.py`
+```bash
+python3 test_api.py email password
+```
+
+## Debugging
+
+Enable debug logging:
+```yaml
+logger:
+  logs:
+    custom_components.sense: debug
+```
+
+Check for:
+- "Using official sense_energy library" (good)
+- "Successfully authenticated"
+- "Updated real-time data: XXXw"
+
+## File Locations
+
+When working with Home Assistant paths:
+- Config: `/config/`
+- Custom components: `/config/custom_components/sense/`
+- This repo: `/Users/joshua.seidel/hass-senses/`
+
+## Next Steps (Priority Order)
+
+### Immediate (v1.3.0) - Real-time Data
+1. Investigate WebSocket for faster updates
+2. Split coordinators (realtime vs trends)
+3. Reduce latency where possible
+
+### Short-term (v1.4.0) - Missing Sensors
+1. Per-device energy tracking
+2. Cost sensors with configurable rates
+3. Peak power sensors
+4. Grid flow sensors
+
+### Medium-term (v2.0.0) - Innovation
+1. Predictive bill estimation
+2. Anomaly detection
+3. Smart automation suggestions
+4. Solar optimization
+
+## Code Style
+
+- Use type hints
+- Follow Home Assistant conventions
+- Match official integration's patterns
+- Keep fallback for custom implementation
+- Document non-obvious decisions
+
+## Important Reminders
+
+1. **Always create GitHub release** - HACS requirement
+2. **Test with actual Sense monitor** - User has hardware
+3. **Keep unique features** - Switches, services, etc.
+4. **Match official then exceed** - Start with parity, add innovation
+5. **Update CHANGELOG.md** - Keep users informed
+

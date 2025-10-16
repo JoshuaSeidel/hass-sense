@@ -19,7 +19,10 @@ from .const import (
     SENSE_CONNECT_EXCEPTIONS,
     DEFAULT_TIMEOUT,
     ACTIVE_UPDATE_RATE,
+    TREND_UPDATE_RATE,
+    CONF_REALTIME_UPDATE_RATE,
 )
+from .coordinator import SenseRealtimeCoordinator, SenseTrendCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,63 +98,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         except SENSE_WEBSOCKET_EXCEPTIONS as err:
             raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
 
-    async def async_update_data():
-        """Fetch data from Sense."""
-        try:
-            # Update realtime data (critical)
-            await gateway.update_realtime()
-            
-            # Try to update trend data (non-critical)
-            try:
-                await gateway.update_trend_data()
-            except Exception as trend_err:
-                # Log but don't fail if trend data is unavailable
-                _LOGGER.debug("Trend data update failed (non-critical): %s", trend_err)
-            
-            # Build data dict compatible with both official and custom library
-            if USE_OFFICIAL_LIB:
-                all_data = {
-                    "active_power": getattr(gateway, 'active_power', 0),
-                    "active_solar_power": getattr(gateway, 'active_solar_power', 0),
-                    "voltage": getattr(gateway, 'active_voltage', []),
-                    "hz": getattr(gateway, 'hz', 0) or getattr(gateway, 'active_frequency', 0),
-                    "active_devices": [d.name for d in getattr(gateway, 'devices', []) if getattr(d, 'state', None) == 'on'],
-                    "daily_usage": getattr(gateway, 'daily_usage', 0),
-                    "daily_production": getattr(gateway, 'daily_production', 0),
-                    "weekly_usage": getattr(gateway, 'weekly_usage', 0),
-                    "weekly_production": getattr(gateway, 'weekly_production', 0),
-                    "monthly_usage": getattr(gateway, 'monthly_usage', 0),
-                    "monthly_production": getattr(gateway, 'monthly_production', 0),
-                    "yearly_usage": getattr(gateway, 'yearly_usage', 0),
-                    "yearly_production": getattr(gateway, 'yearly_production', 0),
-                    "devices": getattr(gateway, 'devices', []),
-                }
-            else:
-                all_data = gateway.get_all_data()
-            
-            _LOGGER.debug("Coordinator data update: active_power=%s, devices=%s", 
-                         all_data.get('active_power'), len(all_data.get('devices', [])))
-            return all_data
-        except SENSE_TIMEOUT_EXCEPTIONS as err:
-            raise UpdateFailed(f"Timeout communicating with Sense API: {err}") from err
-        except SENSE_WEBSOCKET_EXCEPTIONS as err:
-            raise UpdateFailed(f"Error communicating with Sense API: {err}") from err
-
-    coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=f"Sense {email}",
-        update_method=async_update_data,
-        update_interval=timedelta(seconds=ACTIVE_UPDATE_RATE),
+    # Get user-configured update rate, or use default
+    realtime_update_rate = entry_data.get(CONF_REALTIME_UPDATE_RATE, ACTIVE_UPDATE_RATE)
+    
+    # Create separate coordinators for realtime and trend data
+    # This allows different update intervals: realtime (fast) vs trends (slow)
+    realtime_coordinator = SenseRealtimeCoordinator(
+        hass, entry, gateway, update_rate=realtime_update_rate
     )
+    
+    _LOGGER.info(
+        "Sense coordinators initialized: realtime=%ss, trends=%ss",
+        realtime_update_rate, TREND_UPDATE_RATE
+    )
+    
+    trend_coordinator = SenseTrendCoordinator(hass, entry, gateway)
 
-    # Fetch initial data
-    await coordinator.async_config_entry_first_refresh()
+    # Fetch initial data for both coordinators
+    await realtime_coordinator.async_config_entry_first_refresh()
+    await trend_coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
-        "coordinator": coordinator,
+        "realtime_coordinator": realtime_coordinator,
+        "trend_coordinator": trend_coordinator,
         "gateway": gateway,
+        # Keep old key for backwards compatibility with sensors
+        "coordinator": realtime_coordinator,
     }
 
     # Set up platforms

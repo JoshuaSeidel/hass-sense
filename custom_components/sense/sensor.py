@@ -191,12 +191,27 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Sense sensors based on a config entry."""
-    coordinator = hass.data[DOMAIN][config_entry.entry_id]["coordinator"]
-    gateway = hass.data[DOMAIN][config_entry.entry_id]["gateway"]
+    data = hass.data[DOMAIN][config_entry.entry_id]
+    realtime_coordinator = data["realtime_coordinator"]
+    trend_coordinator = data["trend_coordinator"]
+    gateway = data["gateway"]
 
-    # Add main sensors
+    # Determine which coordinator to use for each sensor
+    # Realtime sensors: power, voltage, frequency (fast updates)
+    # Trend sensors: daily/weekly/monthly/yearly usage/production (slow updates)
+    realtime_keys = {
+        "active_power", "active_solar_power", 
+        "voltage_l1", "voltage_l2", 
+        "frequency"
+    }
+
+    # Add sensors with appropriate coordinator
     entities = [
-        SenseSensor(coordinator, description, gateway.sense_monitor_id)
+        SenseSensor(
+            realtime_coordinator if description.key in realtime_keys else trend_coordinator,
+            description,
+            gateway.sense_monitor_id
+        )
         for description in SENSOR_TYPES
     ]
 

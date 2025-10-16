@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-10-16
+
+### Added 🚀
+- **Separate Coordinators**: Split data updates into realtime (60s default) and trends (300s)
+- **Configurable Update Rate**: Choose update interval from 5s to 5min during setup
+- **Options Flow**: Change update rate after setup via integration options
+- **Performance**: Trend data (daily/weekly/monthly/yearly) updates separately from realtime
+- **Better Architecture**: Each sensor uses appropriate coordinator for its data type
+
+### Changed
+- Realtime sensors (power, voltage, frequency) now use fast coordinator
+- Trend sensors (usage/production) use slow coordinator (reduces API calls)
+- Update rates are now fully customizable per user preference
+- Default remains 60s for backwards compatibility
+
+### Technical
+- New `coordinator.py` module with `SenseRealtimeCoordinator` and `SenseTrendCoordinator`
+- Each coordinator returns proper data dict and exposes gateway
+- Options flow allows changing update rate without re-adding integration
+- Better logging shows which coordinator is updating
+
+**This enables much faster updates (down to 5s) for users who want near-real-time data!**
+
 ## [1.2.2] - 2025-10-15
 
 ### Fixed
