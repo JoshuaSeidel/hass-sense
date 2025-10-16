@@ -91,6 +91,25 @@ async def test_sense_connection(email: str, password: str):
                 if "signals" in status_data:
                     print("   [Using NEW API format with 'signals' key]")
                     signals = status_data["signals"]
+                    
+                    # DEBUG: Show what's in signals
+                    print(f"\n   DEBUG - Signals structure:")
+                    if isinstance(signals, dict):
+                        print(f"   Signals keys: {list(signals.keys())}")
+                        print(f"   Signals type: dict")
+                        # Try to find the actual data
+                        for key in ['channels', 'progress', 'c', '0', '1']:
+                            if key in signals:
+                                print(f"   Found key '{key}': {signals[key]}")
+                    elif isinstance(signals, list):
+                        print(f"   Signals type: list with {len(signals)} items")
+                        if signals:
+                            print(f"   First item: {signals[0]}")
+                    else:
+                        print(f"   Signals type: {type(signals)}")
+                        print(f"   Signals value: {signals}")
+                    
+                    print(f"\n   Attempting to extract values:")
                     print(f"   Active Power: {signals.get('w', 'N/A')} W")
                     print(f"   Solar Power: {signals.get('solar_w', 'N/A')} W")
                     print(f"   Voltage: {signals.get('voltage', 'N/A')} V")
