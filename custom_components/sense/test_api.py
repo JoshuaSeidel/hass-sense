@@ -157,6 +157,30 @@ async def test_sense_connection(email: str, password: str):
                         for i, (k, v) in enumerate(list(monitor_info.items())[:5]):
                             print(f"      {k}: {v}")
                 
+                # DEBUG: Dump ENTIRE response to find power data
+                print(f"\n   DEBUG - FULL RESPONSE DUMP:")
+                print(f"   Looking for power data in entire response...")
+                import json
+                
+                def find_power_data(obj, path=""):
+                    """Recursively search for power-related data"""
+                    if isinstance(obj, dict):
+                        for key, value in obj.items():
+                            current_path = f"{path}.{key}" if path else key
+                            if key in ['w', 'power', 'watts', 'grid_w', 'solar_w', 'voltage', 'hz', 'frequency']:
+                                print(f"      Found {key} at {current_path}: {value}")
+                            if isinstance(value, (dict, list)):
+                                find_power_data(value, current_path)
+                    elif isinstance(obj, list):
+                        for i, item in enumerate(obj):
+                            find_power_data(item, f"{path}[{i}]")
+                
+                find_power_data(status_data)
+                
+                # Also show the raw JSON (first 1000 chars)
+                print(f"\n   First 1000 chars of raw response:")
+                print(f"   {json.dumps(status_data)[:1000]}...")
+                
         except Exception as e:
             print(f"❌ Status endpoint error: {e}")
             import traceback
