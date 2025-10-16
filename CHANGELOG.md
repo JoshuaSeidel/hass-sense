@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-10-15
+
+### Fixed
+- **MAJOR FIX**: Updated to handle new Sense API response format
+  - API now returns data nested under `signals`, `device_detection`, and `monitor_info` keys
+  - Integration now correctly parses the new response structure
+  - Power, voltage, and frequency data now display correctly
+  - Active device detection updated for new format
+
+### Added
+- Backward compatibility with old API format (automatic detection)
+- Enhanced test script to show which API format is being used
+
+### Changed
+- Real-time data parsing completely rewritten for new API structure
+- Device detection updated to use `device_detection.in_progress` structure
+
+**This is a breaking API change from Sense. All users should update to v1.1.0.**
+
+## [1.0.5] - 2025-10-15
+
+### Added
+- Bash script version of test tool (`test_api.sh`) - works without Python dependencies
+- No external dependencies required for testing
+
+### Fixed
+- "No module named 'aiohttp'" error when running Python test script
+- Test script now works in Home Assistant container environment
+
+### Changed
+- Bash script is now the recommended testing method
+- Updated all documentation to reference bash script first
+
 ## [1.0.4] - 2025-10-15
 
 ### Added

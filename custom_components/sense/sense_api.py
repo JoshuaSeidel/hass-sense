@@ -154,25 +154,47 @@ class SenseableAsync:
         try:
             data = await self._api_call("GET", f"app/monitors/{self.sense_monitor_id}/status")
             
-            _LOGGER.debug("Realtime API response: %s", data)
+            _LOGGER.debug("Realtime API response keys: %s", list(data.keys()) if data else None)
             
             if not data:
                 _LOGGER.warning("No data returned from realtime status endpoint")
                 return
+            
+            # NEW API FORMAT: Data is now nested under 'signals' key
+            if "signals" in data:
+                signals = data["signals"]
+                _LOGGER.debug("Using new API format with 'signals' key")
                 
-            # Parse realtime data with better error handling
-            self.active_power = data.get("w", 0)
-            self.active_solar_power = abs(data.get("solar_w", 0))
-            self.voltage = data.get("voltage", [])
-            self.hz = data.get("hz", 0)
+                # Extract power data from signals
+                self.active_power = signals.get("w", 0)
+                self.active_solar_power = abs(signals.get("solar_w", 0))
+                self.voltage = signals.get("voltage", [])
+                self.hz = signals.get("hz", 0)
+                
+                # Get active devices from device_detection
+                device_detection = data.get("device_detection", {})
+                detected_devices = device_detection.get("in_progress", [])
+                self.active_devices = [
+                    device.get("name", "Unknown")
+                    for device in detected_devices
+                    if device.get("icon") != "home"  # Exclude the "Always On" category
+                ]
+                
+            else:
+                # OLD API FORMAT: Direct access (fallback for compatibility)
+                _LOGGER.debug("Using old API format (direct keys)")
+                self.active_power = data.get("w", 0)
+                self.active_solar_power = abs(data.get("solar_w", 0))
+                self.voltage = data.get("voltage", [])
+                self.hz = data.get("hz", 0)
 
-            # Get active devices
-            devices_data = data.get("devices", [])
-            self.active_devices = [
-                device["name"]
-                for device in devices_data
-                if device.get("state") == "on"
-            ]
+                # Get active devices
+                devices_data = data.get("devices", [])
+                self.active_devices = [
+                    device["name"]
+                    for device in devices_data
+                    if device.get("state") == "on"
+                ]
 
             _LOGGER.info("Updated real-time data: %sW, Solar: %sW, Voltage: %s, Hz: %s, Active devices: %s", 
                         self.active_power, self.active_solar_power, self.voltage, self.hz, len(self.active_devices))

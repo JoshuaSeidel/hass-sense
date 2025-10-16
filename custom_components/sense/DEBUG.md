@@ -4,10 +4,20 @@
 
 If your integration connects but shows no data, run this test script:
 
+**Option 1: Bash script (recommended - no dependencies):**
+```bash
+cd /config/custom_components/sense
+chmod +x test_api.sh
+./test_api.sh your_email@example.com your_password
+```
+
+**Option 2: Python script (if aiohttp is available):**
 ```bash
 cd /config/custom_components/sense
 python3 test_api.py your_email@example.com your_password
 ```
+
+If you get "No module named 'aiohttp'", use the bash script instead.
 
 This will show you:
 - ✅ If authentication works

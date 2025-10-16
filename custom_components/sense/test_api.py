@@ -86,19 +86,39 @@ async def test_sense_connection(email: str, password: str):
                 status_data = await response.json()
                 
                 print("✅ Realtime data retrieved!")
-                print(f"   Active Power: {status_data.get('w', 'N/A')} W")
-                print(f"   Solar Power: {status_data.get('solar_w', 'N/A')} W")
-                print(f"   Voltage: {status_data.get('voltage', 'N/A')} V")
-                print(f"   Frequency: {status_data.get('hz', 'N/A')} Hz")
                 
-                devices = status_data.get("devices", [])
-                active_devices = [d for d in devices if d.get("state") == "on"]
-                print(f"   Active Devices: {len(active_devices)}")
-                
-                if active_devices:
-                    print("   Active device names:")
-                    for device in active_devices[:5]:
-                        print(f"      - {device.get('name', 'Unknown')}")
+                # Check for new API format (nested under 'signals')
+                if "signals" in status_data:
+                    print("   [Using NEW API format with 'signals' key]")
+                    signals = status_data["signals"]
+                    print(f"   Active Power: {signals.get('w', 'N/A')} W")
+                    print(f"   Solar Power: {signals.get('solar_w', 'N/A')} W")
+                    print(f"   Voltage: {signals.get('voltage', 'N/A')} V")
+                    print(f"   Frequency: {signals.get('hz', 'N/A')} Hz")
+                    
+                    # Get devices from device_detection
+                    device_detection = status_data.get("device_detection", {})
+                    detected = device_detection.get("in_progress", [])
+                    print(f"   Active Devices: {len(detected)}")
+                    if detected:
+                        print("   Active device names:")
+                        for device in detected[:5]:
+                            print(f"      - {device.get('name', 'Unknown')}")
+                else:
+                    print("   [Using OLD API format]")
+                    print(f"   Active Power: {status_data.get('w', 'N/A')} W")
+                    print(f"   Solar Power: {status_data.get('solar_w', 'N/A')} W")
+                    print(f"   Voltage: {status_data.get('voltage', 'N/A')} V")
+                    print(f"   Frequency: {status_data.get('hz', 'N/A')} Hz")
+                    
+                    devices = status_data.get("devices", [])
+                    active_devices = [d for d in devices if d.get("state") == "on"]
+                    print(f"   Active Devices: {len(active_devices)}")
+                    
+                    if active_devices:
+                        print("   Active device names:")
+                        for device in active_devices[:5]:
+                            print(f"      - {device.get('name', 'Unknown')}")
                 
                 # Show raw response for debugging
                 print(f"\n   Raw response keys: {list(status_data.keys())}")

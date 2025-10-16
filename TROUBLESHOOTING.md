@@ -39,9 +39,17 @@ Realtime API response: None
 
 Run the test script to verify API connectivity:
 
+**Recommended (bash script - no dependencies):**
 ```bash
 cd /config/custom_components/sense
-python3 test_sense_api.py your_email@example.com your_password
+chmod +x test_api.sh
+./test_api.sh your_email@example.com your_password
+```
+
+**Alternative (Python script):**
+```bash
+cd /config/custom_components/sense
+python3 test_api.py your_email@example.com your_password
 ```
 
 This will show you exactly what data is being returned from the Sense API.
