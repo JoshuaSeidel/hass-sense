@@ -16,8 +16,13 @@ from .const import (
     TREND_UPDATE_RATE,
     SENSE_TIMEOUT_EXCEPTIONS,
     SENSE_WEBSOCKET_EXCEPTIONS,
+    CONF_ELECTRICITY_RATE,
+    CONF_SOLAR_CREDIT_RATE,
+    DEFAULT_ELECTRICITY_RATE,
+    DEFAULT_SOLAR_CREDIT_RATE,
 )
 from .statistics import SenseAnalytics
+from .cost_calculator import CostCalculator
 
 try:
     from sense_energy import (
@@ -69,6 +74,11 @@ class SenseRealtimeCoordinator(SenseCoordinator):
         super().__init__(hass, config_entry, gateway, "Realtime", update_rate)
         self.gateway = gateway  # Expose gateway for sensor access
         self.analytics = SenseAnalytics(hass)  # Analytics engine
+        
+        # Initialize cost calculator with configured rates
+        electricity_rate = config_entry.data.get(CONF_ELECTRICITY_RATE, DEFAULT_ELECTRICITY_RATE)
+        solar_credit = config_entry.data.get(CONF_SOLAR_CREDIT_RATE, DEFAULT_SOLAR_CREDIT_RATE)
+        self.cost_calculator = CostCalculator(hass, electricity_rate, solar_credit)
 
     async def _async_update_data(self) -> dict:
         """Retrieve latest realtime state and return data dict."""
@@ -130,6 +140,11 @@ class SenseTrendCoordinator(SenseCoordinator):
         """Initialize."""
         super().__init__(hass, config_entry, gateway, "Trends", TREND_UPDATE_RATE)
         self.gateway = gateway  # Expose gateway for sensor access
+        
+        # Initialize cost calculator with configured rates
+        electricity_rate = config_entry.data.get(CONF_ELECTRICITY_RATE, DEFAULT_ELECTRICITY_RATE)
+        solar_credit = config_entry.data.get(CONF_SOLAR_CREDIT_RATE, DEFAULT_SOLAR_CREDIT_RATE)
+        self.cost_calculator = CostCalculator(hass, electricity_rate, solar_credit)
 
     async def _async_update_data(self) -> dict:
         """Update the trend data and return data dict."""

@@ -29,9 +29,15 @@ DOMAIN = "sense"
 # Configuration
 CONF_MONITOR_ID = "monitor_id"
 CONF_REALTIME_UPDATE_RATE = "realtime_update_rate"
+CONF_ELECTRICITY_RATE = "electricity_rate"
+CONF_SOLAR_CREDIT_RATE = "solar_credit_rate"
+CONF_CURRENCY = "currency"
 DEFAULT_TIMEOUT = 30
 ACTIVE_UPDATE_RATE = 60  # seconds - default for realtime updates
 TREND_UPDATE_RATE = 300  # 5 minutes - for historical data
+DEFAULT_ELECTRICITY_RATE = 0.12  # USD per kWh
+DEFAULT_SOLAR_CREDIT_RATE = 0.10  # USD per kWh
+DEFAULT_CURRENCY = "USD"
 
 # Update rate options (seconds)
 UPDATE_RATE_OPTIONS = {
@@ -42,6 +48,15 @@ UPDATE_RATE_OPTIONS = {
     "60": "60 seconds (Default)",
     "120": "2 minutes (Slow)",
     "300": "5 minutes (Very Slow)",
+}
+
+# Currency options
+CURRENCY_OPTIONS = {
+    "USD": "$ (USD)",
+    "EUR": "€ (EUR)",
+    "GBP": "£ (GBP)",
+    "CAD": "$ (CAD)",
+    "AUD": "$ (AUD)",
 }
 
 # Sense Data Keys

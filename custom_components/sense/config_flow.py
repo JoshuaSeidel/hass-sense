@@ -20,8 +20,15 @@ from .const import (
     SENSE_TIMEOUT_EXCEPTIONS,
     SENSE_WEBSOCKET_EXCEPTIONS,
     CONF_REALTIME_UPDATE_RATE,
+    CONF_ELECTRICITY_RATE,
+    CONF_SOLAR_CREDIT_RATE,
+    CONF_CURRENCY,
     ACTIVE_UPDATE_RATE,
     UPDATE_RATE_OPTIONS,
+    DEFAULT_ELECTRICITY_RATE,
+    DEFAULT_SOLAR_CREDIT_RATE,
+    DEFAULT_CURRENCY,
+    CURRENCY_OPTIONS,
 )
 from .sense_api import SenseableAsync
 
@@ -147,6 +154,16 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
             CONF_REALTIME_UPDATE_RATE, ACTIVE_UPDATE_RATE
         )
         
+        electricity_rate = self.config_entry.data.get(
+            CONF_ELECTRICITY_RATE, DEFAULT_ELECTRICITY_RATE
+        )
+        solar_credit_rate = self.config_entry.data.get(
+            CONF_SOLAR_CREDIT_RATE, DEFAULT_SOLAR_CREDIT_RATE
+        )
+        currency = self.config_entry.data.get(
+            CONF_CURRENCY, DEFAULT_CURRENCY
+        )
+        
         ai_provider = self.config_entry.data.get("ai_provider", "none")
         ai_agent_id = self.config_entry.data.get("ai_agent_id", "")
         ai_token_budget = self.config_entry.data.get("ai_token_budget", "medium")
@@ -179,6 +196,12 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
                 selector.SelectOptionDict(value=k, label=v)
             )
         
+        currency_options_list = []
+        for k, v in CURRENCY_OPTIONS.items():
+            currency_options_list.append(
+                selector.SelectOptionDict(value=k, label=v)
+            )
+        
         schema_dict = {
             vol.Required(
                 CONF_REALTIME_UPDATE_RATE,
@@ -186,6 +209,37 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
             ): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=update_rate_options_list,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                CONF_ELECTRICITY_RATE,
+                default=electricity_rate,
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0.01,
+                    max=1.0,
+                    step=0.01,
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            ),
+            vol.Optional(
+                CONF_SOLAR_CREDIT_RATE,
+                default=solar_credit_rate,
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0.0,
+                    max=1.0,
+                    step=0.01,
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            ),
+            vol.Required(
+                CONF_CURRENCY,
+                default=currency,
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=currency_options_list,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             ),

@@ -238,9 +238,14 @@ class SenseDailyInsightsSensor(SenseAISensor):
         realtime_data = self.coordinator.data or {}
         trend_data = self._trend_coordinator.data or {}
         
+        # Use configured electricity rate
+        daily_cost = self._trend_coordinator.cost_calculator.calculate_daily_cost(
+            trend_data.get("daily_usage", 0)
+        )
+        
         data = {
             "daily_usage": trend_data.get("daily_usage", 0),
-            "daily_cost": trend_data.get("daily_usage", 0) * 0.12,  # TODO: Get actual rate
+            "daily_cost": daily_cost,
             "peak_power": realtime_data.get("peak_power", 0),
             "avg_power": realtime_data.get("avg_power", 0),
             "daily_production": trend_data.get("daily_production", 0),
@@ -362,13 +367,17 @@ class SenseBillForecastSensor(SenseAISensor):
         days_in_month = 30
         day_of_month = now.day
         
+        monthly_usage = trend_data.get("monthly_usage", 0)
+        daily_avg = monthly_usage / max(day_of_month, 1)
+        projected_usage = daily_avg * days_in_month
+        
         usage_data = {
             "days_elapsed": day_of_month,
             "days_in_month": days_in_month,
-            "month_usage": trend_data.get("monthly_usage", 0),
-            "month_cost": trend_data.get("monthly_usage", 0) * 0.12,
-            "daily_avg": trend_data.get("monthly_usage", 0) / max(day_of_month, 1),
-            "projected_cost": (trend_data.get("monthly_usage", 0) / max(day_of_month, 1)) * days_in_month * 0.12,
+            "month_usage": monthly_usage,
+            "month_cost": self.coordinator.cost_calculator.calculate_daily_cost(monthly_usage),
+            "daily_avg": daily_avg,
+            "projected_cost": self.coordinator.cost_calculator.calculate_daily_cost(projected_usage),
         }
         
         try:
@@ -418,11 +427,13 @@ class SenseWeeklyStorySensor(SenseAISensor):
         
         trend_data = self.coordinator.data or {}
         
+        weekly_usage = trend_data.get("weekly_usage", 0)
+        
         week_data = {
             "start_date": (now - timedelta(days=7)).strftime("%Y-%m-%d"),
             "end_date": now.strftime("%Y-%m-%d"),
-            "total_usage": trend_data.get("weekly_usage", 0),
-            "total_cost": trend_data.get("weekly_usage", 0) * 0.12,
+            "total_usage": weekly_usage,
+            "total_cost": self.coordinator.cost_calculator.calculate_daily_cost(weekly_usage),
         }
         
         try:
@@ -519,9 +530,11 @@ class SenseComparativeSensor(SenseAISensor):
         
         trend_data = self.coordinator.data or {}
         
+        monthly_usage = trend_data.get("monthly_usage", 0)
+        
         comparison_data = {
-            "usage": trend_data.get("monthly_usage", 0),
-            "cost": trend_data.get("monthly_usage", 0) * 0.12,
+            "usage": monthly_usage,
+            "cost": self.coordinator.cost_calculator.calculate_daily_cost(monthly_usage),
             "percentile": 75,  # TODO: Calculate from real data
         }
         

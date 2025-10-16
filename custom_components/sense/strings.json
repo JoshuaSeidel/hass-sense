@@ -28,12 +28,18 @@
         "description": "Configure data refresh rate and AI-powered energy insights",
         "data": {
           "realtime_update_rate": "Data Refresh Rate",
+          "electricity_rate": "Electricity Rate (per kWh)",
+          "solar_credit_rate": "Solar Credit Rate (per kWh)",
+          "currency": "Currency",
           "ai_provider": "AI Features",
           "ai_agent_id": "Conversation Agent",
           "ai_token_budget": "AI Usage Level"
         },
         "data_description": {
           "realtime_update_rate": "How often to update power readings. Faster rates (5-10s) are more responsive but use more API calls.",
+          "electricity_rate": "Cost you pay per kilowatt-hour (kWh) of electricity. Check your utility bill for your rate.",
+          "solar_credit_rate": "Credit you receive per kWh of solar energy sent back to the grid. Leave at 0 if you don't have solar.",
+          "currency": "Currency symbol to display for cost calculations.",
           "ai_provider": "Enable AI-powered insights, forecasting, and recommendations for your energy usage.",
           "ai_agent_id": "Select which conversation agent to use for AI features. Auto-detect works for most setups.",
           "ai_token_budget": "Control AI token usage. Low uses fewer tokens, High provides more frequent insights. Based on your existing API plan."

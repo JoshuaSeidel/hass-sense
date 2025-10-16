@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-10-16
+
+### 🎉 Added - Configurable Electricity Rates!
+
+**No More Hardcoded Rates!**
+- ✅ Configurable electricity rate (per kWh)
+- ✅ Configurable solar credit rate (per kWh)
+- ✅ Currency selection (USD, EUR, GBP, CAD, AUD)
+- ✅ Integrated `CostCalculator` throughout
+
+**What This Means:**
+- AI cost predictions now use YOUR actual rates
+- Bill forecasts are accurate to YOUR utility
+- Solar savings calculations based on YOUR credits
+- All cost sensors show real costs
+
+### Changed
+- **AI sensors** now use configured rates instead of hardcoded $0.12/kWh
+- **CostCalculator** integrated into both coordinators
+- **Config flow** includes rate configuration with helpful descriptions
+
+### Added
+- Electricity rate configuration field (default: $0.12/kWh)
+- Solar credit rate configuration field (default: $0.10/kWh)
+- Currency selector (USD, EUR, GBP, CAD, AUD)
+- Translations for new configuration fields
+
+### Technical
+- Added `CONF_ELECTRICITY_RATE`, `CONF_SOLAR_CREDIT_RATE`, `CONF_CURRENCY` constants
+- Added `CostCalculator` to both `SenseRealtimeCoordinator` and `SenseTrendCoordinator`
+- Updated all AI sensors to call `cost_calculator.calculate_daily_cost()`
+- Removed hardcoded `* 0.12` calculations throughout
+- Added `CURRENCY_OPTIONS` for dropdown
+
+### Fixed
+- **Daily Insights**: Now uses your configured rate
+- **Bill Forecast**: Accurate projections based on your rate
+- **Weekly Story**: Real cost calculations
+- **Comparative Analysis**: True cost comparisons
+- All AI features use actual electricity costs
+
+### Configuration UI
+**New Fields in Options:**
+```
+Electricity Rate (per kWh): [0.12]
+Solar Credit Rate (per kWh): [0.10]
+Currency: [$ (USD) ▼]
+```
+
+**Where to Find Your Rate:**
+Check your utility bill for:
+- "Price per kWh"
+- "Energy charge"
+- "Generation charge"
+
+Common US rates: $0.08 - $0.25/kWh
+
 ## [2.1.2] - 2025-10-16
 
 ### Fixed
