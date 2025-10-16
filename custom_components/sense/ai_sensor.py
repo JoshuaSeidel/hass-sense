@@ -12,6 +12,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 if TYPE_CHECKING:
@@ -144,8 +145,26 @@ class SenseAISensor(CoordinatorEntity, SensorEntity):
     async def async_added_to_hass(self) -> None:
         """When entity is added to hass."""
         await super().async_added_to_hass()
-        # Trigger initial update
-        await self.async_update()
+        
+        # Set up periodic updates (every 15 minutes)
+        # Individual sensors will check if they should actually update
+        self.async_on_remove(
+            async_track_time_interval(
+                self.hass,
+                self._async_scheduled_update,
+                timedelta(minutes=15),
+            )
+        )
+        
+        _LOGGER.debug("AI sensor %s added, will check for updates every 15 minutes", self._attr_name)
+    
+    async def _async_scheduled_update(self, now: datetime) -> None:
+        """Scheduled update check."""
+        try:
+            await self.async_update()
+            self.async_write_ha_state()
+        except Exception as ex:
+            _LOGGER.error("Error updating AI sensor %s: %s", self._attr_name, ex)
     
     async def async_update(self) -> None:
         """Update the sensor - override in subclasses."""

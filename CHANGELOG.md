@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.5] - 2025-10-16
+
+### Fixed - CRITICAL: Setup Hanging
+- **Integration setup hanging**: Fixed sensor platform taking >10 seconds
+  - Issue: AI sensors were blocking setup by calling LLM immediately
+  - Solution: Added `async_track_time_interval` for periodic updates
+  - AI sensors now check every 15 minutes if they should update
+  - Setup completes immediately, updates happen in background
+- **Deprecated config_entry warning**: Removed explicit assignment
+  - Fixed: "sets option flow config_entry explicitly" warning
+  - Removed `self.config_entry = config_entry` (available from parent)
+  - Prepares for Home Assistant 2025.12
+
+### Changed
+- AI sensors now use `async_track_time_interval` for updates
+- Check every 15 minutes, but only update based on sensor schedule
+- Daily insights: Once per day at 6 AM
+- Solar coach: Every 15 minutes (if conditions met)
+- Bill forecast: Daily
+- Weekly story: Weekly
+- Setup no longer blocked by AI sensor initialization
+
+### Technical
+- Added `async_track_time_interval` import
+- Added `_async_scheduled_update` method to base AI sensor
+- Each sensor's `async_update()` has its own time checks
+- Removed blocking `await self.async_update()` from `async_added_to_hass`
+- Config flow now uses inherited `self.config_entry`
+
+**Integration should now load in <10 seconds! AI updates happen in background!**
+
 ## [2.0.4] - 2025-10-16
 
 ### Fixed - CRITICAL BUGS

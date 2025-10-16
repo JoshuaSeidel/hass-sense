@@ -116,9 +116,8 @@ class SenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class SenseOptionsFlow(config_entries.OptionsFlow):
     """Handle Sense options."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
+    # config_entry is available as self.config_entry from parent class
+    # No need to set it explicitly (deprecated in HA 2025.12)
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
