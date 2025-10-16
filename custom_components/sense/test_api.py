@@ -142,6 +142,21 @@ async def test_sense_connection(email: str, password: str):
                 # Show raw response for debugging
                 print(f"\n   Raw response keys: {list(status_data.keys())}")
                 
+                # DEBUG: Check monitor_info for actual data
+                if "monitor_info" in status_data:
+                    print(f"\n   DEBUG - Monitor Info structure:")
+                    monitor_info = status_data["monitor_info"]
+                    if isinstance(monitor_info, dict):
+                        print(f"   Monitor Info keys: {list(monitor_info.keys())}")
+                        # Look for common power-related keys
+                        for key in ['w', 'power', 'current_power', 'grid_w', 'solar_w', 'voltage', 'hz']:
+                            if key in monitor_info:
+                                print(f"   Found '{key}': {monitor_info[key]}")
+                        # Show first few keys with their values
+                        print(f"   First 5 items:")
+                        for i, (k, v) in enumerate(list(monitor_info.items())[:5]):
+                            print(f"      {k}: {v}")
+                
         except Exception as e:
             print(f"❌ Status endpoint error: {e}")
             import traceback
