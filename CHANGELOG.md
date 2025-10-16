@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2025-10-16
+
+### Fixed
+- **Update rate dropdown**: Fixed display of update rate options
+  - Now properly converts string keys to integers
+  - Shows friendly labels (e.g., "10 seconds (Fast)")
+  - Default value correctly selected
+- **Translation support**: Added translations/en.json
+  - Home Assistant now properly loads friendly names
+  - Field labels should show correctly
+
+### Changed
+- **Token budget labels**: Show tokens instead of dollars
+  - "Low - Essential features (~$1-2/month)" → "Low - Essential features (~10K tokens/month)"
+  - "Medium - Recommended (~$3-5/month)" → "Medium - Recommended (~30K tokens/month)"
+  - "High - All features (~$8-12/month)" → "High - All features (~75K tokens/month)"
+  - Better for users with existing API plans
+- Updated field description for token budget
+  - "Control AI token usage. Low uses fewer tokens, High provides more frequent insights. Based on your existing API plan."
+
+### Technical
+- Created translations/ folder structure
+- Added translations/en.json alongside strings.json
+- Fixed UPDATE_RATE_OPTIONS conversion to int keys
+- Proper type handling for default values
+
+**Update rate dropdown fixed! Token budgets show tokens instead of dollars!**
+
 ## [2.1.0] - 2025-10-16
 
 ### Added - Agent Dropdown & Friendly UI

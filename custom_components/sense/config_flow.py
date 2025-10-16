@@ -160,12 +160,17 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
         if any(domain in self.hass.config.components for domain in ["anthropic", "anthropic_conversation"]):
             provider_options["anthropic"] = "Anthropic Conversation"
         
-        # Build schema dynamically based on AI provider selection
+        # Build schema dynamically based on AI provider selection  
+        # Convert UPDATE_RATE_OPTIONS to int keys for proper display
+        update_rate_display = {}
+        for k, v in UPDATE_RATE_OPTIONS.items():
+            update_rate_display[int(k)] = v
+        
         schema_dict = {
             vol.Required(
                 CONF_REALTIME_UPDATE_RATE,
-                default=current_rate,
-            ): vol.In({int(k): v for k, v in UPDATE_RATE_OPTIONS.items()}),
+                default=int(current_rate),
+            ): vol.In(update_rate_display),
             vol.Required(
                 "ai_provider",
                 default=ai_provider,
@@ -203,9 +208,9 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
                 "ai_token_budget",
                 default=ai_token_budget,
             )] = vol.In({
-                "low": "Low - Essential features (~$1-2/month)",
-                "medium": "Medium - Recommended (~$3-5/month)",
-                "high": "High - All features (~$8-12/month)",
+                "low": "Low - Essential features (~10K tokens/month)",
+                "medium": "Medium - Recommended (~30K tokens/month)",
+                "high": "High - All features (~75K tokens/month)",
             })
         
         return self.async_show_form(
