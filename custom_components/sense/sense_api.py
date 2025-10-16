@@ -92,11 +92,18 @@ class SenseableAsync:
                     response.raise_for_status()
                     data = await response.json()
 
-                    self.sense_access_token = data["access_token"]
-                    self.sense_user_id = data["user_id"]
-                    self.sense_monitor_id = data["monitors"][0]["id"]
+                    self.sense_access_token = data.get("access_token")
+                    self.sense_user_id = data.get("user_id")
+                    
+                    monitors = data.get("monitors", [])
+                    if not monitors:
+                        _LOGGER.error("No monitors found in account")
+                        raise Exception("No Sense monitors found in account")
+                    
+                    self.sense_monitor_id = monitors[0]["id"]
 
-                    _LOGGER.debug("Successfully authenticated with Sense API")
+                    _LOGGER.info("Successfully authenticated with Sense API - Monitor ID: %s, User ID: %s", 
+                                self.sense_monitor_id, self.sense_user_id)
                     return True
 
         except asyncio.TimeoutError as err:
@@ -144,9 +151,16 @@ class SenseableAsync:
 
     async def update_realtime(self) -> None:
         """Get real-time power data."""
-        data = await self._api_call("GET", f"app/monitors/{self.sense_monitor_id}/status")
-
-        if data:
+        try:
+            data = await self._api_call("GET", f"app/monitors/{self.sense_monitor_id}/status")
+            
+            _LOGGER.debug("Realtime API response: %s", data)
+            
+            if not data:
+                _LOGGER.warning("No data returned from realtime status endpoint")
+                return
+                
+            # Parse realtime data with better error handling
             self.active_power = data.get("w", 0)
             self.active_solar_power = abs(data.get("solar_w", 0))
             self.voltage = data.get("voltage", [])
@@ -160,7 +174,11 @@ class SenseableAsync:
                 if device.get("state") == "on"
             ]
 
-            _LOGGER.debug("Updated real-time data: %sW, Solar: %sW", self.active_power, self.active_solar_power)
+            _LOGGER.info("Updated real-time data: %sW, Solar: %sW, Voltage: %s, Hz: %s, Active devices: %s", 
+                        self.active_power, self.active_solar_power, self.voltage, self.hz, len(self.active_devices))
+        except Exception as err:
+            _LOGGER.error("Error updating realtime data: %s", err, exc_info=True)
+            raise
 
     async def update_trend_data(self) -> None:
         """Get trend data (daily, weekly, monthly, yearly)."""

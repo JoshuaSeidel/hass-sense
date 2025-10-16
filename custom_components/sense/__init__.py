@@ -59,7 +59,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 # Log but don't fail if trend data is unavailable
                 _LOGGER.debug("Trend data update failed (non-critical): %s", trend_err)
             
-            return gateway.get_all_data()
+            all_data = gateway.get_all_data()
+            _LOGGER.debug("Coordinator data update: active_power=%s, devices=%s", 
+                         all_data.get('active_power'), len(all_data.get('devices', [])))
+            return all_data
         except SENSE_TIMEOUT_EXCEPTIONS as err:
             raise UpdateFailed(f"Timeout communicating with Sense API: {err}") from err
         except SENSE_WEBSOCKET_EXCEPTIONS as err:
