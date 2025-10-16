@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.7] - 2025-10-16
+
+### Fixed - AI Sensors Now Actually Work!
+- **AI sensors stuck in "pending"**: Fixed by adding initial update after 30 seconds
+  - Sensors now do first update 30 seconds after being added
+  - Relaxed time restrictions for first update
+  - Daily insights: No longer requires 6 AM for first update
+  - Solar coach: No longer requires 1 hour wait for first update
+- **Token waste on solar sensors**: Solar coach only updates when solar production > 0
+  - Skips update when no solar production
+  - Shows "no_solar" state instead of "initializing"
+  - Saves tokens by not calling AI when sun is down
+
+### Changed
+- AI sensors do initial update 30 seconds after setup
+- First update ignores time restrictions (6 AM, hourly, etc.)
+- Subsequent updates follow normal schedule
+- Solar coach checks for solar production before calling AI
+- Better logging with `exc_info=True` for debugging
+
+### Technical
+- Added `_async_initial_update()` method to base AI sensor
+- Uses `hass.loop.call_later(30, ...)` to schedule initial update
+- Temporarily sets `_last_update = None` to bypass time checks
+- Solar coach checks `active_solar_power > 0` before update
+- State shows "no_solar" when no production
+
+**AI sensors will now generate within 30 seconds of setup! Solar sensors save tokens!**
+
 ## [2.0.6] - 2025-10-16
 
 ### Fixed

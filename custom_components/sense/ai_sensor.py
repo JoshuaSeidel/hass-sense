@@ -156,7 +156,29 @@ class SenseAISensor(CoordinatorEntity, SensorEntity):
             )
         )
         
+        # Do an initial update after 30 seconds (don't block setup)
+        self.hass.loop.call_later(30, lambda: self.hass.async_create_task(self._async_initial_update()))
+        
         _LOGGER.debug("AI sensor %s added, will check for updates every 15 minutes", self._attr_name)
+    
+    async def _async_initial_update(self) -> None:
+        """Do initial update with relaxed time restrictions."""
+        try:
+            _LOGGER.info("AI sensor %s doing initial update", self._attr_name)
+            # Temporarily allow update regardless of time
+            old_last_update = self._last_update
+            self._last_update = None  # Reset to allow update
+            
+            await self.async_update()
+            
+            # If update didn't set _last_update, restore old value
+            if self._last_update is None:
+                self._last_update = old_last_update
+            
+            self.async_write_ha_state()
+            _LOGGER.info("AI sensor %s initial update complete", self._attr_name)
+        except Exception as ex:
+            _LOGGER.error("Error in initial AI sensor update for %s: %s", self._attr_name, ex, exc_info=True)
     
     async def _async_scheduled_update(self, now: datetime) -> None:
         """Scheduled update check."""
@@ -205,12 +227,12 @@ class SenseDailyInsightsSensor(SenseAISensor):
         """Update insights once per day."""
         now = datetime.now()
         
-        # Update once per day at 6 AM
-        if self._last_update and (now - self._last_update) < timedelta(hours=23):
-            return
-        
-        if now.hour < 6:  # Wait until morning
-            return
+        # Update once per day at 6 AM (but allow first update anytime)
+        if self._last_update:
+            if (now - self._last_update) < timedelta(hours=23):
+                return
+            if now.hour < 6:  # Wait until morning for subsequent updates
+                return
         
         # Collect data from coordinators
         realtime_data = self.coordinator.data or {}
@@ -230,7 +252,7 @@ class SenseDailyInsightsSensor(SenseAISensor):
             self._last_update = now
             _LOGGER.info("Generated daily insights")
         except Exception as ex:
-            _LOGGER.error("Error generating daily insights: %s", ex)
+            _LOGGER.error("Error generating daily insights: %s", ex, exc_info=True)
 
 
 class SenseSolarCoachSensor(SenseAISensor):
@@ -247,6 +269,12 @@ class SenseSolarCoachSensor(SenseAISensor):
         """Return the state."""
         if self._advice:
             return self._advice.get("status", "normal")
+        
+        # Check if there's solar production
+        realtime_data = self.coordinator.data or {}
+        if realtime_data.get("active_solar_power", 0) <= 0:
+            return "no_solar"
+        
         return "initializing"
     
     @property
@@ -264,24 +292,31 @@ class SenseSolarCoachSensor(SenseAISensor):
         """Update advice hourly."""
         now = datetime.now()
         
-        # Update every hour
+        # Update every hour (but allow first update anytime)
         if self._last_update and (now - self._last_update) < timedelta(hours=1):
             return
         
         realtime_data = self.coordinator.data or {}
         
+        # Only update if there's solar production (don't waste tokens)
+        solar_production = realtime_data.get("active_solar_power", 0)
+        if solar_production <= 0:
+            _LOGGER.debug("Skipping solar coach update - no solar production")
+            return
+        
         solar_data = {
-            "production": realtime_data.get("active_solar_power", 0),
+            "production": solar_production,
             "usage": realtime_data.get("active_power", 0),
-            "excess": realtime_data.get("active_solar_power", 0) - realtime_data.get("active_power", 0),
+            "excess": solar_production - realtime_data.get("active_power", 0),
             "self_consumption": realtime_data.get("solar_self_consumption", 0),
         }
         
         try:
             self._advice = await self._coach.get_advice(solar_data)
             self._last_update = now
+            _LOGGER.info("Generated solar coach advice (production: %sW)", solar_production)
         except Exception as ex:
-            _LOGGER.error("Error getting solar advice: %s", ex)
+            _LOGGER.error("Error getting solar advice: %s", ex, exc_info=True)
 
 
 class SenseBillForecastSensor(SenseAISensor):
