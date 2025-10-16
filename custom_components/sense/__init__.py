@@ -142,7 +142,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if unload_ok:
         gateway = hass.data[DOMAIN][entry.entry_id]["gateway"]
-        await gateway.close()
+        # Close gateway if it has a close method (custom implementation)
+        if hasattr(gateway, 'close'):
+            await gateway.close()
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
