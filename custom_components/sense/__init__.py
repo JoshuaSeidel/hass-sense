@@ -23,6 +23,18 @@ from .const import (
     CONF_REALTIME_UPDATE_RATE,
 )
 from .coordinator import SenseRealtimeCoordinator, SenseTrendCoordinator
+from .ai_engine import SenseAIEngine, AIConfig
+from .ai_features import (
+    DailyInsightsGenerator,
+    AnomalyExplainer,
+    SolarCoach,
+    BillForecaster,
+    DeviceIdentifier,
+    WeeklyStoryteller,
+    OptimizationSuggester,
+    ConversationalAssistant,
+    ComparativeAnalyzer,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -119,11 +131,42 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await realtime_coordinator.async_config_entry_first_refresh()
     await trend_coordinator.async_config_entry_first_refresh()
 
+    # Initialize AI features if enabled
+    ai_config = AIConfig(
+        enabled=entry_data.get("ai_enabled", False),
+        provider=entry_data.get("ai_provider", "ha_conversation"),
+        token_budget=entry_data.get("ai_token_budget", "medium"),
+    )
+    
+    ai_engine = None
+    ai_features = {}
+    
+    if ai_config.enabled:
+        _LOGGER.info("Initializing AI features with provider: %s, budget: %s", 
+                     ai_config.provider, ai_config.token_budget)
+        ai_engine = SenseAIEngine(hass, ai_config)
+        
+        # Initialize all AI feature generators
+        ai_features = {
+            "daily_insights": DailyInsightsGenerator(ai_engine),
+            "anomaly_explainer": AnomalyExplainer(ai_engine),
+            "solar_coach": SolarCoach(ai_engine),
+            "bill_forecast": BillForecaster(ai_engine),
+            "device_identifier": DeviceIdentifier(ai_engine),
+            "weekly_story": WeeklyStoryteller(ai_engine),
+            "optimization": OptimizationSuggester(ai_engine),
+            "conversational": ConversationalAssistant(ai_engine),
+            "comparative": ComparativeAnalyzer(ai_engine),
+        }
+
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         "realtime_coordinator": realtime_coordinator,
         "trend_coordinator": trend_coordinator,
         "gateway": gateway,
+        "ai_config": ai_config,
+        "ai_engine": ai_engine,
+        "ai_features": ai_features,
         # Keep old key for backwards compatibility with sensors
         "coordinator": realtime_coordinator,
     }
@@ -194,4 +237,145 @@ async def async_setup_services(hass: HomeAssistant, gateway: SenseableAsync) -> 
     hass.services.async_register(
         DOMAIN, "rename_device", handle_rename_device
     )
+    
+    # Register AI services if enabled
+    for entry_id, data in hass.data[DOMAIN].items():
+        ai_config = data.get("ai_config")
+        if ai_config and ai_config.enabled:
+            await async_setup_ai_services(hass, data)
+            break  # Only register once
+
+
+async def async_setup_ai_services(hass: HomeAssistant, data: dict) -> None:
+    """Set up AI-powered services."""
+    ai_engine = data["ai_engine"]
+    ai_features = data["ai_features"]
+    realtime_coordinator = data["realtime_coordinator"]
+    trend_coordinator = data["trend_coordinator"]
+    
+    async def handle_ask_ai(call: ServiceCall) -> dict:
+        """Handle ask_ai service."""
+        question = call.data.get("question")
+        
+        realtime_data = realtime_coordinator.data or {}
+        trend_data = trend_coordinator.data or {}
+        
+        context_data = {
+            "current_power": realtime_data.get("active_power", 0),
+            "daily_usage": trend_data.get("daily_usage", 0),
+            "monthly_usage": trend_data.get("monthly_usage", 0),
+            "active_devices": realtime_data.get("active_devices", []),
+        }
+        
+        result = await ai_features["conversational"].answer(question, context_data)
+        
+        # Fire event with response
+        hass.bus.async_fire(
+            f"{DOMAIN}_ai_response",
+            {"question": question, "answer": result.get("answer")}
+        )
+        
+        return result
+    
+    async def handle_identify_device(call: ServiceCall) -> dict:
+        """Handle identify_device service."""
+        device_id = call.data.get("device_id")
+        
+        # Get device data
+        device_data = {
+            "id": device_id,
+            "avg_power": 1500,  # TODO: Get from actual device data
+            "duration": 90,
+        }
+        
+        result = await ai_features["device_identifier"].identify(device_data)
+        
+        hass.bus.async_fire(
+            f"{DOMAIN}_device_identified",
+            {"device_id": device_id, "identification": result.get("identification")}
+        )
+        
+        return result
+    
+    async def handle_explain_anomaly(call: ServiceCall) -> dict:
+        """Handle explain_anomaly service."""
+        realtime_data = realtime_coordinator.data or {}
+        
+        if not realtime_data.get("anomaly_detected", False):
+            return {"explanation": "No anomaly currently detected"}
+        
+        anomaly_data = realtime_data.get("anomaly_data", {})
+        device_data = {
+            "active_devices": realtime_data.get("active_devices", []),
+        }
+        
+        result = await ai_features["anomaly_explainer"].explain(anomaly_data, device_data)
+        
+        hass.bus.async_fire(
+            f"{DOMAIN}_anomaly_explained",
+            {"explanation": result.get("explanation")}
+        )
+        
+        return result
+    
+    async def handle_generate_insights(call: ServiceCall) -> dict:
+        """Handle generate_insights service."""
+        period = call.data.get("period", "daily")
+        
+        realtime_data = realtime_coordinator.data or {}
+        trend_data = trend_coordinator.data or {}
+        
+        if period == "daily":
+            data = {
+                "daily_usage": trend_data.get("daily_usage", 0),
+                "peak_power": realtime_data.get("peak_power", 0),
+            }
+            result = await ai_features["daily_insights"].generate(data)
+        elif period == "weekly":
+            data = {
+                "weekly_usage": trend_data.get("weekly_usage", 0),
+            }
+            result = await ai_features["weekly_story"].tell_story(data)
+        else:
+            result = {"error": "Invalid period"}
+        
+        return result
+    
+    async def handle_generate_optimization(call: ServiceCall) -> dict:
+        """Handle generate_optimization service."""
+        result = await ai_features["optimization"].suggest({})
+        return result
+    
+    async def handle_get_privacy_info(call: ServiceCall) -> dict:
+        """Handle get_privacy_info service."""
+        return ai_engine.get_privacy_info()
+    
+    async def handle_get_cost_estimate(call: ServiceCall) -> dict:
+        """Handle get_cost_estimate service."""
+        return ai_engine.get_cost_estimate()
+    
+    # Register all AI services
+    hass.services.async_register(
+        DOMAIN, "ask_ai", handle_ask_ai, supports_response="optional"
+    )
+    hass.services.async_register(
+        DOMAIN, "identify_device", handle_identify_device, supports_response="optional"
+    )
+    hass.services.async_register(
+        DOMAIN, "explain_anomaly", handle_explain_anomaly, supports_response="optional"
+    )
+    hass.services.async_register(
+        DOMAIN, "generate_insights", handle_generate_insights, supports_response="optional"
+    )
+    hass.services.async_register(
+        DOMAIN, "generate_optimization", handle_generate_optimization, supports_response="optional"
+    )
+    hass.services.async_register(
+        DOMAIN, "get_privacy_info", handle_get_privacy_info, supports_response="optional"
+    )
+    hass.services.async_register(
+        DOMAIN, "get_cost_estimate", handle_get_cost_estimate, supports_response="optional"
+    )
+    
+    _LOGGER.info("AI services registered")
 

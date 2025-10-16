@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-10-16
+
+### 🤖 AI-POWERED ENERGY INTELLIGENCE! 
+
+This is a **REVOLUTIONARY** release! The first energy monitoring integration with comprehensive AI features!
+
+### Added - 9 AI Features
+- **Daily Insights**: AI-generated morning summary with recommendations
+- **Anomaly Explanation**: AI explains unusual power spikes
+- **Solar Coach**: Real-time solar optimization advice
+- **Bill Forecast**: Predictive monthly bill with explanation
+- **Device Identification**: AI helps identify unknown devices
+- **Weekly Story**: Engaging narrative about your energy week
+- **Optimization Suggestions**: AI generates automation code
+- **Conversational Assistant**: Ask questions in natural language
+- **Comparative Analysis**: Compare to similar homes
+
+### Added - AI Sensors (7 total)
+- `sensor.sense_ai_daily_insights`
+- `sensor.sense_ai_solar_coach`
+- `sensor.sense_ai_bill_forecast`
+- `sensor.sense_ai_weekly_story`
+- `sensor.sense_ai_optimization_suggestions`
+- `sensor.sense_ai_comparative_analysis`
+- `sensor.sense_ai_anomaly_explanation`
+
+### Added - AI Services (7 total)
+- `sense.ask_ai` - Ask questions about energy
+- `sense.identify_device` - Identify unknown devices
+- `sense.explain_anomaly` - Explain current anomaly
+- `sense.generate_insights` - Generate insights on-demand
+- `sense.generate_optimization` - Get optimization suggestions
+- `sense.get_privacy_info` - See what data is sent
+- `sense.get_cost_estimate` - Estimate AI costs
+
+### Added - Configuration
+- Token budget levels (Low/Medium/High)
+- Multi-provider support (HA Conversation, OpenAI, Anthropic, Built-in)
+- Per-feature enable/disable
+- Privacy transparency
+- Cost estimation
+- Rate limiting
+
+### Technical
+- `ai_engine.py`: Core AI engine with multi-provider support
+- `ai_features.py`: 9 feature implementations with prompt engineering
+- `ai_sensor.py`: AI sensor platform
+- `services.yaml`: Complete service definitions
+- Full documentation in `AI_FEATURES.md`
+
+### Breaking Changes
+- None! AI features are opt-in
+- All existing features work exactly as before
+- Enable AI in integration options
+
+**This changes EVERYTHING about energy monitoring!** 🚀
+
 ## [1.4.0] - 2025-10-16
 
 ### Added 🚀

@@ -1,43 +1,108 @@
+# Sense Energy Monitor Services
+
 get_device_info:
   name: Get Device Info
-  description: Get detailed information about a specific Sense device.
+  description: Get detailed information about a specific device
   fields:
     device_id:
       name: Device ID
-      description: The ID of the device to get information for.
+      description: The ID of the device to get info for
       required: true
-      example: "abc123def456"
+      example: "12345"
       selector:
         text:
 
 reset_device:
   name: Reset Device
-  description: Reset a device (remove it from learned devices).
+  description: Remove a device from learned devices
   fields:
     device_id:
       name: Device ID
-      description: The ID of the device to reset.
+      description: The ID of the device to reset
       required: true
-      example: "abc123def456"
+      example: "12345"
       selector:
         text:
 
 rename_device:
   name: Rename Device
-  description: Rename a detected device.
+  description: Rename a detected device
   fields:
     device_id:
       name: Device ID
-      description: The ID of the device to rename.
+      description: The ID of the device to rename
       required: true
-      example: "abc123def456"
+      example: "12345"
       selector:
         text:
-    name:
+    new_name:
       name: New Name
-      description: The new name for the device.
+      description: The new name for the device
       required: true
-      example: "Living Room Lamp"
+      example: "Kitchen Oven"
       selector:
         text:
 
+# AI-Powered Services
+
+ask_ai:
+  name: Ask AI About Energy
+  description: Ask the AI assistant a question about your energy usage
+  fields:
+    question:
+      name: Question
+      description: Your question about energy usage
+      required: true
+      example: "Why is my bill higher this month?"
+      selector:
+        text:
+          multiline: true
+    
+identify_device:
+  name: Identify Unknown Device
+  description: Use AI to help identify an unknown device
+  fields:
+    device_id:
+      name: Device ID
+      description: The ID of the unknown device
+      required: true
+      example: "unknown_3"
+      selector:
+        text:
+
+explain_anomaly:
+  name: Explain Power Anomaly
+  description: Get AI explanation of current power usage anomaly
+  fields: {}
+
+generate_insights:
+  name: Generate AI Insights
+  description: Manually trigger AI insights generation
+  fields:
+    period:
+      name: Period
+      description: Time period for insights
+      required: false
+      default: "daily"
+      example: "daily"
+      selector:
+        select:
+          options:
+            - daily
+            - weekly
+            - monthly
+
+generate_optimization:
+  name: Generate Optimization Suggestions
+  description: Get AI-generated automation suggestions
+  fields: {}
+
+get_privacy_info:
+  name: Get AI Privacy Information
+  description: Get information about what data is sent to AI
+  fields: {}
+
+get_cost_estimate:
+  name: Get AI Cost Estimate
+  description: Get estimated monthly cost for AI features
+  fields: {}
