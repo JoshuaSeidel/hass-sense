@@ -187,6 +187,38 @@ async def test_sense_connection(email: str, password: str):
             traceback.print_exc()
             return False
         
+        # Step 2.5: Try alternative endpoints for realtime data
+        print("\nStep 2.5: Testing Alternative Realtime Endpoints...")
+        print("-" * 70)
+        
+        alternative_endpoints = [
+            f"/app/monitors/{monitor_id}/realtime",
+            f"/monitors/{monitor_id}/realtime",
+            f"/app/monitors/{monitor_id}/data",
+            f"/app/monitors/{monitor_id}/timeline",
+        ]
+        
+        for endpoint in alternative_endpoints:
+            try:
+                async with session.get(
+                    f"{API_URL}{endpoint}",
+                    headers=headers,
+                ) as response:
+                    print(f"   Trying {endpoint}: HTTP {response.status}")
+                    if response.status == 200:
+                        alt_data = await response.json()
+                        print(f"   ✅ Found working endpoint!")
+                        print(f"   Response keys: {list(alt_data.keys())}")
+                        
+                        # Look for power data
+                        import json
+                        if 'w' in str(alt_data) or 'power' in str(alt_data).lower():
+                            print(f"   🎉 This endpoint contains power data!")
+                            print(f"   First 500 chars: {json.dumps(alt_data)[:500]}")
+                        break
+            except Exception as e:
+                print(f"   {endpoint}: Not available")
+        
         # Step 3: Get Devices
         print("\nStep 3: Testing Devices Endpoint...")
         print("-" * 70)
