@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.6] - 2025-10-16
+
+### Fixed
+- **"Already been setup" error**: Fixed platforms trying to set up twice
+  - Added defensive check in `async_setup_entry` to prevent duplicate setup
+  - Renamed `async_reload_entry` to `async_update_options` for clarity
+  - Better logging when options change
+  - Prevents race conditions during reload
+
+### Changed
+- Integration now checks if already set up before proceeding
+- Logs warning and returns True if duplicate setup attempted
+- Better error handling during options changes
+
+### Technical
+- Added `if entry.entry_id in hass.data.get(DOMAIN, {})` check
+- Prevents `ValueError: Config entry has already been setup!`
+- Safer reload mechanism
+
+**If you see the "already been setup" error, just restart HA cleanly. This fix prevents it from happening again.**
+
 ## [2.0.5] - 2025-10-16
 
 ### Fixed - CRITICAL: Setup Hanging

@@ -57,6 +57,11 @@ PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SWITCH]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Sense from a config entry."""
+    # Check if already set up (shouldn't happen, but be defensive)
+    if entry.entry_id in hass.data.get(DOMAIN, {}):
+        _LOGGER.warning("Sense entry %s already set up, skipping", entry.entry_id)
+        return True
+    
     entry_data = entry.data
     email = entry_data[CONF_EMAIL]
     password = entry_data[CONF_PASSWORD]
@@ -178,13 +183,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await async_setup_services(hass, gateway)
 
     # Register update listener for options changes
-    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    entry.async_on_unload(entry.add_update_listener(async_update_options))
 
     return True
 
 
-async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload the config entry when options change."""
+async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Update options when they change."""
+    _LOGGER.info("Options changed, reloading Sense integration")
+    # Reload the entire integration to apply new settings
     await hass.config_entries.async_reload(entry.entry_id)
 
 
