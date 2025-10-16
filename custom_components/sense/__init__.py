@@ -77,7 +77,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 # Log but don't fail if trend data is unavailable
                 _LOGGER.debug("Trend data update failed (non-critical): %s", trend_err)
             
-            all_data = gateway.get_all_data()
+            # Build data dict compatible with both official and custom library
+            if USE_OFFICIAL_LIB:
+                all_data = {
+                    "active_power": gateway.active_power,
+                    "active_solar_power": gateway.active_solar_power,
+                    "voltage": gateway.active_voltage,
+                    "hz": gateway.active_hz,
+                    "active_devices": [d['name'] for d in gateway.get_detected_devices() if d.get('state') == 'on'],
+                    "daily_usage": gateway.daily_usage,
+                    "daily_production": gateway.daily_production,
+                    "weekly_usage": gateway.weekly_usage,
+                    "weekly_production": gateway.weekly_production,
+                    "monthly_usage": gateway.monthly_usage,
+                    "monthly_production": gateway.monthly_production,
+                    "yearly_usage": gateway.yearly_usage,
+                    "yearly_production": gateway.yearly_production,
+                    "devices": gateway.devices,
+                }
+            else:
+                all_data = gateway.get_all_data()
+            
             _LOGGER.debug("Coordinator data update: active_power=%s, devices=%s", 
                          all_data.get('active_power'), len(all_data.get('devices', [])))
             return all_data

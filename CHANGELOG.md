@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-10-15
+
+### Fixed
+- Fixed AttributeError: 'ASyncSenseable' object has no attribute 'get_all_data'
+- Added compatibility layer between official sense_energy library and custom implementation
+- Properly map official library attributes to our data structure
+
+### Added
+- Comprehensive roadmap for future development
+- Comparison document with official integration
+- Vision for becoming the ultimate Sense integration
+
 ## [1.2.0] - 2025-10-15
 
 ### Changed
