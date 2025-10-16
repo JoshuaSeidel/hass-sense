@@ -140,6 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     ai_config = AIConfig(
         enabled=entry_data.get("ai_enabled", False),
         provider=entry_data.get("ai_provider", "ha_conversation"),
+        agent_id=entry_data.get("ai_agent_id"),
         token_budget=entry_data.get("ai_token_budget", "medium"),
     )
     

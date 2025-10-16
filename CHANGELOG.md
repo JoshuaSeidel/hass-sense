@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.9] - 2025-10-16
+
+### Added - Conversation Agent ID Configuration
+- **New field**: "Conversation Agent ID" in options (when OpenAI/Anthropic selected)
+  - Allows user to specify exact agent ID to use
+  - Example: `conversation.gpt_4o`, `conversation.claude_3_5_sonnet`
+  - Optional: Leave empty for auto-detect
+  - Shows only when OpenAI or Anthropic provider selected
+- **Better agent selection**: Uses configured agent_id first, then falls back
+  - If user specifies agent_id, tries that first
+  - Then tries common agent IDs
+  - Then tries default agent
+  - Logs which agent was successful
+
+### Changed
+- OpenAI/Anthropic provider names updated for clarity:
+  - "OpenAI Direct" → "OpenAI Conversation"
+  - "Anthropic Direct" → "Anthropic Conversation"
+- Agent ID now passed through to AIConfig
+- Better logging: "Successfully used agent_id: conversation.gpt_4o"
+
+### Fixed
+- AI now works with standard OpenAI Conversation integration
+- No more "not aware of any device" errors
+- User can specify exact agent to use from Developer Tools
+
+### How to Use
+1. Go to Sense integration options
+2. Select "OpenAI Conversation" as provider
+3. Optional: Enter agent ID (find it in Dev Tools > Actions > conversation.process)
+4. If empty, will auto-detect
+5. Save and restart
+
+**Now works with standard OpenAI Conversation! Just specify your agent ID!**
+
 ## [2.0.8] - 2025-10-16
 
 ### Fixed - AI Returning Prompt Instead of Response

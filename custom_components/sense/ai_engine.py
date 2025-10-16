@@ -19,6 +19,7 @@ class AIConfig:
     
     enabled: bool = False
     provider: str = "ha_conversation"  # ha_conversation, openai, anthropic, built_in
+    agent_id: str | None = None  # Conversation agent ID to use
     api_key: str | None = None
     model: str | None = None
     token_budget: str = "medium"  # low, medium, high
@@ -181,12 +182,18 @@ class SenseAIEngine:
             # Look for OpenAI conversation agent
             _LOGGER.info("Calling OpenAI via conversation integration")
             
-            # Try different agent IDs in order of preference
-            agent_ids_to_try = [
+            # If user specified an agent_id, use that first
+            agent_ids_to_try = []
+            if self.config.agent_id:
+                agent_ids_to_try.append(self.config.agent_id)
+                _LOGGER.info("Using configured agent_id: %s", self.config.agent_id)
+            
+            # Add fallback agent IDs
+            agent_ids_to_try.extend([
                 "conversation.openai",
                 "openai",
                 None,  # Default agent
-            ]
+            ])
             
             last_error = None
             for agent_id in agent_ids_to_try:
@@ -199,6 +206,7 @@ class SenseAIEngine:
                         _LOGGER.warning("Response looks like prompt echo, trying next agent")
                         continue
                     
+                    _LOGGER.info("Successfully used agent_id: %s", agent_id)
                     return result
                 except Exception as ex:
                     _LOGGER.debug("Agent %s failed: %s", agent_id, ex)

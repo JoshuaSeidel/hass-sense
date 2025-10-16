@@ -140,6 +140,7 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
         )
         
         ai_provider = self.config_entry.data.get("ai_provider", "none")
+        ai_agent_id = self.config_entry.data.get("ai_agent_id", "")
         ai_token_budget = self.config_entry.data.get("ai_token_budget", "medium")
         
         # Check which integrations are available
@@ -150,12 +151,12 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
         
         # Check if OpenAI conversation is available
         if "openai_conversation" in self.hass.config.components:
-            provider_options["openai"] = "OpenAI Integration (Requires API key)"
+            provider_options["openai"] = "OpenAI Conversation (Requires configuration)"
         
         # Check if Anthropic conversation is available
         # Anthropic conversation integration domain varies, check common ones
         if any(domain in self.hass.config.components for domain in ["anthropic", "anthropic_conversation"]):
-            provider_options["anthropic"] = "Anthropic Conversation (Requires API key)"
+            provider_options["anthropic"] = "Anthropic Conversation (Requires configuration)"
         
         # Build schema dynamically based on AI provider selection
         schema_dict = {
@@ -168,6 +169,14 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
                 default=ai_provider,
             ): vol.In(provider_options),
         }
+        
+        # Show agent_id field if OpenAI or Anthropic selected
+        if ai_provider in ["openai", "anthropic"]:
+            schema_dict[vol.Optional(
+                "ai_agent_id",
+                default=ai_agent_id,
+                description="Conversation Agent ID (e.g., 'conversation.gpt_4o' or leave empty for auto-detect)",
+            )] = str
         
         # Only show token budget if AI is enabled
         if ai_provider != "none":
