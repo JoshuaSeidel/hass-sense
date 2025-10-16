@@ -1,9 +1,9 @@
 """The Sense Energy Monitor integration."""
 from __future__ import annotations
 
-import asyncio
 import logging
 from datetime import timedelta
+from functools import partial
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, CONF_TIMEOUT, Platform
@@ -16,19 +16,26 @@ from .const import (
     DOMAIN,
     SENSE_TIMEOUT_EXCEPTIONS,
     SENSE_WEBSOCKET_EXCEPTIONS,
+    SENSE_CONNECT_EXCEPTIONS,
     DEFAULT_TIMEOUT,
     ACTIVE_UPDATE_RATE,
 )
 
+_LOGGER = logging.getLogger(__name__)
+
 try:
-    from sense_energy import ASyncSenseable
+    from sense_energy import (
+        ASyncSenseable,
+        SenseAuthenticationException,
+        SenseMFARequiredException,
+    )
     USE_OFFICIAL_LIB = True
 except ImportError:
     from .sense_api import SenseableAsync as ASyncSenseable
     USE_OFFICIAL_LIB = False
+    SenseAuthenticationException = Exception
+    SenseMFARequiredException = Exception
     _LOGGER.warning("Using fallback sense_api. Install sense_energy for better support.")
-
-_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SWITCH]
 
@@ -44,14 +51,38 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if USE_OFFICIAL_LIB:
         _LOGGER.info("Using official sense_energy library")
-        gateway = ASyncSenseable(api_timeout=timeout, wss_timeout=timeout, client_session=client_session)
+        
+        # Creating ASyncSenseable does blocking I/O (SSL certs)
+        gateway = await hass.async_add_executor_job(
+            partial(
+                ASyncSenseable,
+                api_timeout=timeout,
+                wss_timeout=timeout,
+                client_session=client_session,
+            )
+        )
+        gateway.rate_limit = ACTIVE_UPDATE_RATE
+        
         try:
+            # Authenticate and get monitor data
             await gateway.authenticate(email, password)
             await gateway.get_monitor_data()
+        except (SenseAuthenticationException, SenseMFARequiredException) as err:
+            _LOGGER.warning("Sense authentication failed")
+            raise ConfigEntryAuthFailed(err) from err
+        except SENSE_TIMEOUT_EXCEPTIONS as err:
+            raise ConfigEntryNotReady(str(err) or "Timed out during authentication") from err
+        except SENSE_CONNECT_EXCEPTIONS as err:
+            raise ConfigEntryNotReady(str(err)) from err
+        
+        try:
+            # Fetch devices and initial realtime update
+            await gateway.fetch_devices()
             await gateway.update_realtime()
-        except Exception as err:
-            _LOGGER.error("Authentication failed: %s", err)
-            raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
+        except SENSE_TIMEOUT_EXCEPTIONS as err:
+            raise ConfigEntryNotReady(str(err) or "Timed out during realtime update") from err
+        except SENSE_WEBSOCKET_EXCEPTIONS as err:
+            raise ConfigEntryNotReady(str(err) or "Error during realtime update") from err
     else:
         _LOGGER.info("Using custom sense_api implementation")
         gateway = ASyncSenseable(email, password, timeout, client_session)
@@ -80,20 +111,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             # Build data dict compatible with both official and custom library
             if USE_OFFICIAL_LIB:
                 all_data = {
-                    "active_power": gateway.active_power,
-                    "active_solar_power": gateway.active_solar_power,
-                    "voltage": gateway.active_voltage,
-                    "hz": gateway.active_hz,
-                    "active_devices": [d['name'] for d in gateway.get_detected_devices() if d.get('state') == 'on'],
-                    "daily_usage": gateway.daily_usage,
-                    "daily_production": gateway.daily_production,
-                    "weekly_usage": gateway.weekly_usage,
-                    "weekly_production": gateway.weekly_production,
-                    "monthly_usage": gateway.monthly_usage,
-                    "monthly_production": gateway.monthly_production,
-                    "yearly_usage": gateway.yearly_usage,
-                    "yearly_production": gateway.yearly_production,
-                    "devices": gateway.devices,
+                    "active_power": getattr(gateway, 'active_power', 0),
+                    "active_solar_power": getattr(gateway, 'active_solar_power', 0),
+                    "voltage": getattr(gateway, 'active_voltage', []),
+                    "hz": getattr(gateway, 'hz', 0) or getattr(gateway, 'active_frequency', 0),
+                    "active_devices": [d.name for d in getattr(gateway, 'devices', []) if getattr(d, 'state', None) == 'on'],
+                    "daily_usage": getattr(gateway, 'daily_usage', 0),
+                    "daily_production": getattr(gateway, 'daily_production', 0),
+                    "weekly_usage": getattr(gateway, 'weekly_usage', 0),
+                    "weekly_production": getattr(gateway, 'weekly_production', 0),
+                    "monthly_usage": getattr(gateway, 'monthly_usage', 0),
+                    "monthly_production": getattr(gateway, 'monthly_production', 0),
+                    "yearly_usage": getattr(gateway, 'yearly_usage', 0),
+                    "yearly_production": getattr(gateway, 'yearly_production', 0),
+                    "devices": getattr(gateway, 'devices', []),
                 }
             else:
                 all_data = gateway.get_all_data()

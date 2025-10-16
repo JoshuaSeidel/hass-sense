@@ -1,7 +1,28 @@
 """Constants for the Sense Energy Monitor integration."""
 from datetime import timedelta
-import asyncio
-from aiohttp.client_exceptions import ClientError
+import socket
+
+try:
+    from sense_energy import (
+        SenseAPIException,
+        SenseAPITimeoutException,
+        SenseWebsocketException,
+    )
+    SENSE_TIMEOUT_EXCEPTIONS = (TimeoutError, SenseAPITimeoutException)
+    SENSE_WEBSOCKET_EXCEPTIONS = (socket.gaierror, SenseWebsocketException)
+    SENSE_CONNECT_EXCEPTIONS = (
+        socket.gaierror,
+        TimeoutError,
+        SenseAPITimeoutException,
+        SenseAPIException,
+    )
+except ImportError:
+    # Fallback if sense_energy not installed
+    import asyncio
+    from aiohttp.client_exceptions import ClientError
+    SENSE_TIMEOUT_EXCEPTIONS = (asyncio.TimeoutError, TimeoutError)
+    SENSE_WEBSOCKET_EXCEPTIONS = (ClientError, ConnectionError, OSError, socket.gaierror)
+    SENSE_CONNECT_EXCEPTIONS = SENSE_WEBSOCKET_EXCEPTIONS
 
 DOMAIN = "sense"
 
@@ -9,10 +30,7 @@ DOMAIN = "sense"
 CONF_MONITOR_ID = "monitor_id"
 DEFAULT_TIMEOUT = 30
 ACTIVE_UPDATE_RATE = 60  # seconds
-
-# Sense API Exceptions
-SENSE_TIMEOUT_EXCEPTIONS = (asyncio.TimeoutError,)
-SENSE_WEBSOCKET_EXCEPTIONS = (ClientError, ConnectionError, OSError)
+TREND_UPDATE_RATE = 300  # 5 minutes
 
 # Sense Data Keys
 SENSE_ACTIVE_POWER = "active_power"

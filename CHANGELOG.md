@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2025-10-15
+
+### Fixed
+- **CRITICAL**: Use proper exception classes from sense_energy library
+- **CRITICAL**: Use executor job for gateway creation (blocks on SSL cert loading)
+- **CRITICAL**: Call `gateway.fetch_devices()` before realtime update
+- **CRITICAL**: Set `gateway.rate_limit` for proper API rate limiting
+- **CRITICAL**: Use getattr() with fallbacks for all attribute access
+- Proper exception handling matching official integration
+
+### Added
+- SENSE_CONNECT_EXCEPTIONS for connection errors
+- TREND_UPDATE_RATE constant (300s for future use)
+- Detailed implementation comparison document
+
+### Changed
+- Improved error messages to match official integration
+- Better fallback handling when sense_energy not installed
+
+**This release fixes all known compatibility issues with the official sense_energy library!**
+
 ## [1.2.1] - 2025-10-15
 
 ### Fixed
