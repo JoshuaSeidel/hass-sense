@@ -48,6 +48,16 @@ A fully-featured Home Assistant custom integration for the Sense Energy Monitor,
 - Automatic reconnection on connection failures
 - **Options flow** to change update rate after setup
 
+### 🚀 Advanced Features
+Ready to take it further? Check out **[ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)** for:
+- 💰 Cost tracking & bill projection
+- ⚡ Peak power detection
+- 📊 Predictive analytics
+- 🤖 Smart automations (load shedding, off-peak optimization)
+- ☀️ Solar optimization strategies
+- 💡 Energy budgets
+- 📱 Dashboard examples
+
 ## Installation
 
 ### Method 1: HACS (Recommended)
