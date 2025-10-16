@@ -148,6 +148,8 @@ class SenseAIEngine:
             if agent_id:
                 service_data["agent_id"] = agent_id
             
+            _LOGGER.debug("Calling conversation with agent_id: %s, prompt length: %d", agent_id, len(prompt))
+            
             response = await self.hass.services.async_call(
                 "conversation",
                 "process",
@@ -156,11 +158,19 @@ class SenseAIEngine:
                 return_response=True,
             )
             
+            _LOGGER.debug("Conversation response structure: %s", response.keys() if response else "None")
+            
             # Extract response text from conversation response
             speech = response.get("response", {}).get("speech", {})
+            _LOGGER.debug("Speech structure: %s", type(speech))
+            
             if isinstance(speech, dict):
-                return speech.get("plain", {}).get("speech", "No response")
-            return str(speech) if speech else "No response"
+                result = speech.get("plain", {}).get("speech", "No response")
+            else:
+                result = str(speech) if speech else "No response"
+            
+            _LOGGER.info("Conversation response (first 200 chars): %s", result[:200])
+            return result
         except Exception as ex:
             _LOGGER.error("Error calling HA conversation: %s", ex, exc_info=True)
             raise
@@ -169,18 +179,39 @@ class SenseAIEngine:
         """Call OpenAI via conversation integration."""
         try:
             # Look for OpenAI conversation agent
-            # Common agent IDs: "conversation.openai", "openai"
             _LOGGER.info("Calling OpenAI via conversation integration")
             
-            # Try with agent_id first
-            try:
-                return await self._call_ha_conversation(prompt, agent_id="conversation.openai")
-            except Exception:
-                # Fallback to default conversation agent
-                _LOGGER.warning("OpenAI agent not found, using default conversation agent")
-                return await self._call_ha_conversation(prompt)
+            # Try different agent IDs in order of preference
+            agent_ids_to_try = [
+                "conversation.openai",
+                "openai",
+                None,  # Default agent
+            ]
+            
+            last_error = None
+            for agent_id in agent_ids_to_try:
+                try:
+                    _LOGGER.debug("Trying agent_id: %s", agent_id)
+                    result = await self._call_ha_conversation(prompt, agent_id=agent_id)
+                    
+                    # Check if result looks like it's just echoing the prompt
+                    if len(result) > 500 and "Context Data" in result and "Task" in result:
+                        _LOGGER.warning("Response looks like prompt echo, trying next agent")
+                        continue
+                    
+                    return result
+                except Exception as ex:
+                    _LOGGER.debug("Agent %s failed: %s", agent_id, ex)
+                    last_error = ex
+                    continue
+            
+            # If all failed, raise the last error
+            if last_error:
+                raise last_error
+            return "No conversation agent available"
+            
         except Exception as ex:
-            _LOGGER.error("Error calling OpenAI: %s", ex)
+            _LOGGER.error("Error calling OpenAI: %s", ex, exc_info=True)
             raise
     
     async def _call_anthropic(self, prompt: str, max_tokens: int) -> str:

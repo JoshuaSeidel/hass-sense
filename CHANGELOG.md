@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.8] - 2025-10-16
+
+### Fixed - AI Returning Prompt Instead of Response
+- **AI echoing prompt back**: Fixed conversation agent not generating responses
+  - Added detection for prompt echo (checks for "Context Data" and "Task" in response)
+  - Tries multiple agent IDs in fallback order
+  - Better error logging to debug conversation integration issues
+- **Improved debugging**: Added extensive logging for conversation calls
+  - Logs agent_id being used
+  - Logs response structure
+  - Logs first 200 chars of response
+  - Helps diagnose conversation integration issues
+
+### Changed
+- OpenAI provider now tries multiple agent IDs:
+  1. `conversation.openai`
+  2. `openai`
+  3. Default agent (None)
+- Detects and skips responses that look like prompt echoes
+- Better error messages and logging
+
+### Technical
+- Added prompt echo detection in `_call_openai`
+- Tries agent_ids in order until one works
+- Logs conversation response structure for debugging
+- Added `exc_info=True` to all error logs
+
+**If you see your prompt being returned, check logs to see which agent is being used and if it's configured correctly.**
+
 ## [2.0.7] - 2025-10-16
 
 ### Fixed - AI Sensors Now Actually Work!
