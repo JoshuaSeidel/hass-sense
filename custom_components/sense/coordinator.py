@@ -17,6 +17,7 @@ from .const import (
     SENSE_TIMEOUT_EXCEPTIONS,
     SENSE_WEBSOCKET_EXCEPTIONS,
 )
+from .statistics import SenseAnalytics
 
 try:
     from sense_energy import (
@@ -67,16 +68,24 @@ class SenseRealtimeCoordinator(SenseCoordinator):
         """Initialize."""
         super().__init__(hass, config_entry, gateway, "Realtime", update_rate)
         self.gateway = gateway  # Expose gateway for sensor access
+        self.analytics = SenseAnalytics(hass)  # Analytics engine
 
     async def _async_update_data(self) -> dict:
         """Retrieve latest realtime state and return data dict."""
         try:
             await self._gateway.update_realtime()
+            
+            active_power = getattr(self._gateway, 'active_power', 0)
+            active_solar = getattr(self._gateway, 'active_solar_power', 0)
+            
+            # Update analytics
+            self.analytics.update(active_power, active_solar)
+            
             _LOGGER.info(
                 "Realtime update (%ss interval): %sW, Solar: %sW",
                 self.update_interval.total_seconds(),
-                self._gateway.active_power,
-                self._gateway.active_solar_power,
+                active_power,
+                active_solar,
             )
         except SENSE_TIMEOUT_EXCEPTIONS as ex:
             _LOGGER.debug("Timeout retrieving realtime data: %s", ex)
@@ -86,6 +95,10 @@ class SenseRealtimeCoordinator(SenseCoordinator):
             # Don't fail - keep old data
         
         # Build data dict from gateway attributes
+        power_stats = self.analytics.power_stats.to_dict()
+        solar_stats = self.analytics.solar_stats.to_dict()
+        anomaly = self.analytics.detect_anomaly()
+        
         return {
             "active_power": getattr(self._gateway, 'active_power', 0),
             "active_solar_power": getattr(self._gateway, 'active_solar_power', 0),
@@ -93,6 +106,15 @@ class SenseRealtimeCoordinator(SenseCoordinator):
             "hz": getattr(self._gateway, 'hz', 0) or getattr(self._gateway, 'active_frequency', 0),
             "active_devices": [d.name for d in getattr(self._gateway, 'devices', []) if getattr(d, 'state', None) == 'on'],
             "devices": getattr(self._gateway, 'devices', []),
+            # Analytics data
+            "peak_power": power_stats['max_power'],
+            "avg_power": power_stats['avg_power'],
+            "power_variance": power_stats['variance'],
+            "recent_15min_avg": power_stats['recent_15min_avg'],
+            "solar_peak": solar_stats['max_production'],
+            "solar_self_consumption": solar_stats['avg_self_consumption'],
+            "anomaly_detected": anomaly is not None,
+            "anomaly_data": anomaly,
         }
 
 

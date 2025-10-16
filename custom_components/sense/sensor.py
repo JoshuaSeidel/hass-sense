@@ -182,6 +182,56 @@ SENSOR_TYPES: tuple[SenseSensorEntityDescription, ...] = (
         icon=ICON_SOLAR,
         value_fn=lambda data: data.get("yearly_production", 0),
     ),
+    # Analytics Sensors
+    SenseSensorEntityDescription(
+        key="peak_power",
+        translation_key="peak_power",
+        name="Peak Power Today",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon=ICON_POWER,
+        value_fn=lambda data: data.get("peak_power", 0),
+    ),
+    SenseSensorEntityDescription(
+        key="avg_power",
+        translation_key="avg_power",
+        name="Average Power",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon=ICON_POWER,
+        value_fn=lambda data: data.get("avg_power", 0),
+    ),
+    SenseSensorEntityDescription(
+        key="recent_15min_avg",
+        translation_key="recent_15min_avg",
+        name="15-Minute Average Power",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon=ICON_POWER,
+        value_fn=lambda data: data.get("recent_15min_avg", 0),
+    ),
+    SenseSensorEntityDescription(
+        key="solar_peak",
+        translation_key="solar_peak",
+        name="Peak Solar Production Today",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon=ICON_SOLAR,
+        value_fn=lambda data: data.get("solar_peak", 0),
+    ),
+    SenseSensorEntityDescription(
+        key="solar_self_consumption",
+        translation_key="solar_self_consumption",
+        name="Solar Self-Consumption Rate",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon=ICON_SOLAR,
+        value_fn=lambda data: data.get("solar_self_consumption", 0),
+    ),
 )
 
 
@@ -197,12 +247,15 @@ async def async_setup_entry(
     gateway = data["gateway"]
 
     # Determine which coordinator to use for each sensor
-    # Realtime sensors: power, voltage, frequency (fast updates)
+    # Realtime sensors: power, voltage, frequency, analytics (fast updates)
     # Trend sensors: daily/weekly/monthly/yearly usage/production (slow updates)
     realtime_keys = {
         "active_power", "active_solar_power", 
         "voltage_l1", "voltage_l2", 
-        "frequency"
+        "frequency",
+        # Analytics sensors
+        "peak_power", "avg_power", "recent_15min_avg",
+        "solar_peak", "solar_self_consumption",
     }
 
     # Add sensors with appropriate coordinator

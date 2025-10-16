@@ -23,20 +23,29 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Sense binary sensors based on a config entry."""
-    coordinator = hass.data[DOMAIN][config_entry.entry_id]["coordinator"]
-    gateway = hass.data[DOMAIN][config_entry.entry_id]["gateway"]
+    data = hass.data[DOMAIN][config_entry.entry_id]
+    realtime_coordinator = data["realtime_coordinator"]
+    gateway = data["gateway"]
 
     # Get all discovered devices
     devices = await gateway.get_discovered_device_data()
     
     entities = [
         SenseDeviceBinarySensor(
-            coordinator,
+            realtime_coordinator,
             device,
             gateway.sense_monitor_id,
         )
         for device in devices
     ]
+    
+    # Add anomaly detection binary sensor
+    entities.append(
+        SenseAnomalyDetectionSensor(
+            realtime_coordinator,
+            gateway.sense_monitor_id,
+        )
+    )
 
     async_add_entities(entities)
 
@@ -101,6 +110,61 @@ class SenseDeviceBinarySensor(CoordinatorEntity, BinarySensorEntity):
             }
         
         return {"device_id": self._device_id}
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return self.coordinator.last_update_success and self.coordinator.data is not None
+
+
+class SenseAnomalyDetectionSensor(CoordinatorEntity, BinarySensorEntity):
+    """Binary sensor for detecting anomalous power usage."""
+
+    _attr_has_entity_name = True
+    _attr_attribution = ATTRIBUTION
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_icon = "mdi:alert-circle"
+
+    def __init__(
+        self,
+        coordinator,
+        monitor_id: str,
+    ) -> None:
+        """Initialize the anomaly detection sensor."""
+        super().__init__(coordinator)
+        self._monitor_id = monitor_id
+        self._attr_unique_id = f"{monitor_id}_anomaly_detection"
+        self._attr_name = "Power Usage Anomaly"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, monitor_id)},
+            "name": "Sense Energy Monitor",
+            "manufacturer": "Sense",
+            "model": "Energy Monitor",
+        }
+
+    @property
+    def is_on(self) -> bool:
+        """Return true if anomaly is detected."""
+        if not self.coordinator.data:
+            return False
+        return self.coordinator.data.get("anomaly_detected", False)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return the state attributes."""
+        if not self.coordinator.data:
+            return {}
+        
+        anomaly_data = self.coordinator.data.get("anomaly_data")
+        if anomaly_data:
+            return {
+                "current_power": anomaly_data.get("current"),
+                "expected_power": anomaly_data.get("expected"),
+                "deviation": round(anomaly_data.get("deviation", 0), 2),
+                "message": anomaly_data.get("message"),
+            }
+        
+        return {}
 
     @property
     def available(self) -> bool:

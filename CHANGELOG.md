@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-10-16
+
+### Added 🚀
+- **Analytics Engine**: Built-in power usage analytics
+- **Peak Power Sensor**: Tracks highest power usage today
+- **Average Power Sensor**: Running average of power consumption
+- **15-Minute Average Sensor**: Recent power trend
+- **Peak Solar Sensor**: Highest solar production today
+- **Solar Self-Consumption Sensor**: Shows % of solar power you're using vs exporting
+- **Anomaly Detection Binary Sensor**: Automatically detects unusual power usage
+- **statistics.py Module**: PowerStatistics and SolarStatistics tracking
+
+### Features
+- Real-time anomaly detection (alerts when usage is abnormal)
+- Solar efficiency tracking (optimize self-consumption)
+- Daily peak tracking (automatic reset at midnight)
+- Historical analysis (last 100 readings)
+- Statistical variance calculation
+- Spike detection
+
+### Technical
+- Analytics integrated into SenseRealtimeCoordinator
+- Statistics tracked in memory (no database required)
+- Daily automatic reset
+- Attributes include deviation, expected vs actual values
+
+**This is INNOVATION! No other integration has built-in analytics and anomaly detection!** 🎉
+
 ## [1.3.3] - 2025-10-16
 
 ### Fixed
