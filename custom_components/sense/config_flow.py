@@ -11,6 +11,7 @@ from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, CONF_TIMEOUT
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
@@ -131,6 +132,10 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
             ai_provider = user_input.get("ai_provider", "none")
             user_input["ai_enabled"] = ai_provider != "none"
             
+            # Convert realtime_update_rate back to int
+            if CONF_REALTIME_UPDATE_RATE in user_input:
+                user_input[CONF_REALTIME_UPDATE_RATE] = int(user_input[CONF_REALTIME_UPDATE_RATE])
+            
             # Update the config entry with new options
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
@@ -161,26 +166,46 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
             provider_options["anthropic"] = "Anthropic Conversation"
         
         # Build schema dynamically based on AI provider selection  
-        # Convert UPDATE_RATE_OPTIONS to int keys for proper display
-        update_rate_display = {}
+        # Convert UPDATE_RATE_OPTIONS to proper selector format
+        update_rate_options_list = []
         for k, v in UPDATE_RATE_OPTIONS.items():
-            update_rate_display[int(k)] = v
+            update_rate_options_list.append(
+                selector.SelectOptionDict(value=str(k), label=v)
+            )
+        
+        provider_options_list = []
+        for k, v in provider_options.items():
+            provider_options_list.append(
+                selector.SelectOptionDict(value=k, label=v)
+            )
         
         schema_dict = {
             vol.Required(
                 CONF_REALTIME_UPDATE_RATE,
-                default=int(current_rate),
-            ): vol.In(update_rate_display),
+                default=str(current_rate),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=update_rate_options_list,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
             vol.Required(
                 "ai_provider",
                 default=ai_provider,
-            ): vol.In(provider_options),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=provider_options_list,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
         }
         
         # Show agent_id dropdown if OpenAI or Anthropic selected
         if ai_provider in ["openai", "anthropic"]:
             # Get list of conversation agents
-            agent_options = {"": "Auto-detect (Recommended)"}
+            agent_options_list = [
+                selector.SelectOptionDict(value="", label="Auto-detect (Recommended)")
+            ]
             
             # Find all conversation agents
             conversation_entities = self.hass.states.async_all("conversation")
@@ -188,36 +213,52 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
                 agent_id = entity.entity_id
                 # Get friendly name or use entity_id
                 friendly_name = entity.attributes.get("friendly_name", agent_id)
-                agent_options[agent_id] = friendly_name
+                agent_options_list.append(
+                    selector.SelectOptionDict(value=agent_id, label=friendly_name)
+                )
             
             # If no agents found, add some common ones
-            if len(agent_options) == 1:
-                agent_options["conversation.openai"] = "OpenAI (conversation.openai)"
-                agent_options["conversation.gpt_4o"] = "GPT-4o (conversation.gpt_4o)"
-                agent_options["conversation.gpt_4o_mini"] = "GPT-4o Mini (conversation.gpt_4o_mini)"
-                agent_options["conversation.anthropic"] = "Anthropic (conversation.anthropic)"
+            if len(agent_options_list) == 1:
+                agent_options_list.extend([
+                    selector.SelectOptionDict(value="conversation.openai", label="OpenAI (conversation.openai)"),
+                    selector.SelectOptionDict(value="conversation.gpt_4o", label="GPT-4o (conversation.gpt_4o)"),
+                    selector.SelectOptionDict(value="conversation.gpt_4o_mini", label="GPT-4o Mini (conversation.gpt_4o_mini)"),
+                    selector.SelectOptionDict(value="conversation.anthropic", label="Anthropic (conversation.anthropic)"),
+                ])
             
             schema_dict[vol.Optional(
                 "ai_agent_id",
                 default=ai_agent_id if ai_agent_id else "",
-            )] = vol.In(agent_options)
+            )] = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=agent_options_list,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            )
         
         # Only show token budget if AI is enabled
         if ai_provider != "none":
+            token_budget_options_list = [
+                selector.SelectOptionDict(value="low", label="Low - Essential features (~10K tokens/month)"),
+                selector.SelectOptionDict(value="medium", label="Medium - Recommended (~30K tokens/month)"),
+                selector.SelectOptionDict(value="high", label="High - All features (~75K tokens/month)"),
+            ]
+            
             schema_dict[vol.Required(
                 "ai_token_budget",
                 default=ai_token_budget,
-            )] = vol.In({
-                "low": "Low - Essential features (~10K tokens/month)",
-                "medium": "Medium - Recommended (~30K tokens/month)",
-                "high": "High - All features (~75K tokens/month)",
-            })
+            )] = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=token_budget_options_list,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            )
         
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(schema_dict),
             description_placeholders={
-                "info": "Configure update rate and AI features. AI provides intelligent insights, bill forecasting, and recommendations."
+                "info": "Configure update rate and AI features."
             },
         )
 

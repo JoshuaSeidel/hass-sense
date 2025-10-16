@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.2] - 2025-10-16
+
+### Fixed
+- **Config UI dropdown display**: Fixed label positioning in options flow
+  - Labels now appear ABOVE dropdowns, not inside them
+  - Changed from `vol.In()` to `selector.SelectSelector()` for proper rendering
+  - "Data Refresh Rate" label now properly separated from the value
+  - All dropdowns now use modern Home Assistant selector UI
+- **Value conversion**: Added proper int conversion for `realtime_update_rate`
+  - Selectors return strings, now properly converted back to int on save
+
+### Changed
+- **UI improvements**: All dropdowns now use Home Assistant's modern selector UI
+  - Better visual separation between labels and values
+  - Consistent with native Home Assistant integrations
+  - Improved accessibility
+
+### Technical
+- Imported `homeassistant.helpers.selector`
+- Converted all `vol.In()` dropdowns to `selector.SelectSelector()`
+- Used `SelectOptionDict` for proper label/value pairs
+- Added type conversion in `async_step_init` for int values
+
 ## [2.1.1] - 2025-10-16
 
 ### Fixed
