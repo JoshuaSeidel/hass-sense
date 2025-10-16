@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-10-16
+
+### Added - Agent Dropdown & Friendly UI
+- **Conversation Agent Dropdown**: Auto-discovers all conversation agents
+  - Shows as dropdown (not text field)
+  - "Auto-detect (Recommended)" as first option
+  - Lists all available conversation agents with friendly names
+  - Includes common fallback agents if none found
+  - Much easier to select correct agent
+- **Friendly UI Labels**: No more variable-looking text
+  - "realtime_update_rate" → "Data Refresh Rate"
+  - "ai_provider" → "AI Features"
+  - "ai_agent_id" → "Conversation Agent"
+  - "ai_token_budget" → "AI Usage Level"
+  - Better descriptions for each field
+
+### Changed
+- Agent ID is now a dropdown selector (not text input)
+- Discovers conversation entities automatically
+- Cleaner provider labels:
+  - "Disabled - No AI Features" → "Disabled"
+  - "Home Assistant Conversation (Free - Uses...)" → "Home Assistant Conversation (Free)"
+- Token budget labels reorganized:
+  - "Low (~$1-2/month) - Essential features only" → "Low - Essential features (~$1-2/month)"
+  - Consistent formatting across all options
+- Config screen title: "Sense Energy Monitor - Configuration"
+- Better field descriptions
+
+### Technical
+- Uses `hass.states.async_all("conversation")` to find agents
+- Extracts friendly_name from attributes
+- Falls back to common agent IDs if none found
+- Agent dropdown populated dynamically
+
+**Much friendlier config UI! Agent selection is now a dropdown!**
+
 ## [2.0.10] - 2025-10-16
 
 ### Fixed - Agent ID Validation

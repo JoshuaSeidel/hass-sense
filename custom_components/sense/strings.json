@@ -24,19 +24,19 @@
   "options": {
     "step": {
       "init": {
-        "title": "Sense Energy Monitor Options",
-        "description": "Configure update rate and AI features",
+        "title": "Sense Energy Monitor - Configuration",
+        "description": "Configure data refresh rate and AI-powered energy insights",
         "data": {
-          "realtime_update_rate": "Real-time Update Rate",
-          "ai_provider": "AI Provider",
-          "ai_agent_id": "Conversation Agent ID (Optional)",
-          "ai_token_budget": "Monthly Token Budget"
+          "realtime_update_rate": "Data Refresh Rate",
+          "ai_provider": "AI Features",
+          "ai_agent_id": "Conversation Agent",
+          "ai_token_budget": "AI Usage Level"
         },
         "data_description": {
-          "realtime_update_rate": "How often to fetch power data. Lower values are more responsive but use more API calls.",
-          "ai_provider": "Select an AI provider for intelligent insights and forecasting. Choose 'Disabled' to turn off AI features.",
-          "ai_agent_id": "Optional: Specify exact agent ID (e.g. 'conversation.gpt_4o'). Leave empty to auto-detect. Find agent IDs in Developer Tools > Actions > conversation.process.",
-          "ai_token_budget": "Estimated monthly cost for AI features. Higher budgets enable more frequent updates and advanced features."
+          "realtime_update_rate": "How often to update power readings. Faster rates (5-10s) are more responsive but use more API calls.",
+          "ai_provider": "Enable AI-powered insights, forecasting, and recommendations for your energy usage.",
+          "ai_agent_id": "Select which conversation agent to use for AI features. Auto-detect works for most setups.",
+          "ai_token_budget": "Control AI usage and costs. Low saves money, High provides more frequent insights and features."
         }
       }
     }

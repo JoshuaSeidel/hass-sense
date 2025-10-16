@@ -148,18 +148,17 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
         
         # Check which integrations are available
         provider_options = {
-            "none": "Disabled - No AI Features",
-            "ha_conversation": "Home Assistant Conversation (Free - Uses your default agent)",
+            "none": "Disabled",
+            "ha_conversation": "Home Assistant Conversation (Free)",
         }
         
         # Check if OpenAI conversation is available
         if "openai_conversation" in self.hass.config.components:
-            provider_options["openai"] = "OpenAI Conversation (Requires configuration)"
+            provider_options["openai"] = "OpenAI Conversation"
         
         # Check if Anthropic conversation is available
-        # Anthropic conversation integration domain varies, check common ones
         if any(domain in self.hass.config.components for domain in ["anthropic", "anthropic_conversation"]):
-            provider_options["anthropic"] = "Anthropic Conversation (Requires configuration)"
+            provider_options["anthropic"] = "Anthropic Conversation"
         
         # Build schema dynamically based on AI provider selection
         schema_dict = {
@@ -173,13 +172,30 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
             ): vol.In(provider_options),
         }
         
-        # Show agent_id field if OpenAI or Anthropic selected
+        # Show agent_id dropdown if OpenAI or Anthropic selected
         if ai_provider in ["openai", "anthropic"]:
+            # Get list of conversation agents
+            agent_options = {"": "Auto-detect (Recommended)"}
+            
+            # Find all conversation agents
+            conversation_entities = self.hass.states.async_all("conversation")
+            for entity in conversation_entities:
+                agent_id = entity.entity_id
+                # Get friendly name or use entity_id
+                friendly_name = entity.attributes.get("friendly_name", agent_id)
+                agent_options[agent_id] = friendly_name
+            
+            # If no agents found, add some common ones
+            if len(agent_options) == 1:
+                agent_options["conversation.openai"] = "OpenAI (conversation.openai)"
+                agent_options["conversation.gpt_4o"] = "GPT-4o (conversation.gpt_4o)"
+                agent_options["conversation.gpt_4o_mini"] = "GPT-4o Mini (conversation.gpt_4o_mini)"
+                agent_options["conversation.anthropic"] = "Anthropic (conversation.anthropic)"
+            
             schema_dict[vol.Optional(
                 "ai_agent_id",
-                default=ai_agent_id,
-                description="Conversation Agent ID (e.g., 'conversation.gpt_4o' or leave empty for auto-detect)",
-            )] = str
+                default=ai_agent_id if ai_agent_id else "",
+            )] = vol.In(agent_options)
         
         # Only show token budget if AI is enabled
         if ai_provider != "none":
@@ -187,9 +203,9 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
                 "ai_token_budget",
                 default=ai_token_budget,
             )] = vol.In({
-                "low": "Low (~$1-2/month) - Essential features only",
-                "medium": "Medium (~$3-5/month) - Recommended",
-                "high": "High (~$8-12/month) - All features, real-time",
+                "low": "Low - Essential features (~$1-2/month)",
+                "medium": "Medium - Recommended (~$3-5/month)",
+                "high": "High - All features (~$8-12/month)",
             })
         
         return self.async_show_form(
