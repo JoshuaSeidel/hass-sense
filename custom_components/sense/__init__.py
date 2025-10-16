@@ -49,11 +49,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     email = entry_data[CONF_EMAIL]
     password = entry_data[CONF_PASSWORD]
     timeout = entry_data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+    
+    # Get user-configured update rate early (needed for rate limiting)
+    realtime_update_rate = entry_data.get(CONF_REALTIME_UPDATE_RATE, ACTIVE_UPDATE_RATE)
 
     client_session = async_get_clientsession(hass)
 
     if USE_OFFICIAL_LIB:
-        _LOGGER.info("Using official sense_energy library")
+        _LOGGER.info("Using official sense_energy library with %ss update rate", realtime_update_rate)
         
         # Creating ASyncSenseable does blocking I/O (SSL certs)
         gateway = await hass.async_add_executor_job(
@@ -64,7 +67,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 client_session=client_session,
             )
         )
-        gateway.rate_limit = ACTIVE_UPDATE_RATE
+        # Set rate limit to user's chosen update rate
+        gateway.rate_limit = realtime_update_rate
         
         try:
             # Authenticate and get monitor data
@@ -98,9 +102,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         except SENSE_WEBSOCKET_EXCEPTIONS as err:
             raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
 
-    # Get user-configured update rate, or use default
-    realtime_update_rate = entry_data.get(CONF_REALTIME_UPDATE_RATE, ACTIVE_UPDATE_RATE)
-    
     # Create separate coordinators for realtime and trend data
     # This allows different update intervals: realtime (fast) vs trends (slow)
     realtime_coordinator = SenseRealtimeCoordinator(

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2025-10-16
+
+### Fixed
+- **CRITICAL**: `gateway.rate_limit` now uses user-configured rate instead of hardcoded 60s
+- The official library's WebSocket rate limiting was always 60s regardless of settings
+- Now properly applies your chosen update rate (5s, 10s, etc.)
+
+### Technical
+- Moved `realtime_update_rate` calculation to top of `async_setup_entry`
+- Set `gateway.rate_limit = realtime_update_rate` (was using `ACTIVE_UPDATE_RATE` constant)
+- Added logging: "Using official sense_energy library with Xs update rate"
+
+**This was the actual bug! Now fast updates (5-15s) will really work!**
+
 ## [1.3.2] - 2025-10-16
 
 ### Fixed
