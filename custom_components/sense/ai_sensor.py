@@ -140,6 +140,16 @@ class SenseAISensor(CoordinatorEntity, SensorEntity):
             "model": "Energy Monitor",
         }
         self._last_update = None
+    
+    async def async_added_to_hass(self) -> None:
+        """When entity is added to hass."""
+        await super().async_added_to_hass()
+        # Trigger initial update
+        await self.async_update()
+    
+    async def async_update(self) -> None:
+        """Update the sensor - override in subclasses."""
+        pass
 
 
 class SenseDailyInsightsSensor(SenseAISensor):

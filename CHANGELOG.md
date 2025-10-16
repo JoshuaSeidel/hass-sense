@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2025-10-16
+
+### Fixed - CRITICAL BUGS
+- **Binary sensor/switch crash**: Fixed `'coroutine' object is not subscriptable` error
+  - Issue: `sense_energy` library's `get_discovered_device_data()` is broken
+  - Solution: Use `gateway.devices` directly instead
+  - Affected: binary_sensor.py and switch.py platforms
+- **AI sensors stuck in "pending"**: Fixed AI sensors not updating
+  - Added `async_added_to_hass()` to trigger initial update
+  - Simplified AI sensor creation (no feature checking)
+  - All 7 AI sensors now added when AI enabled
+  - Better logging to show which sensors are created
+
+### Changed
+- Binary sensors now use `gateway.devices` attribute
+- Switch platform uses `gateway.devices` with proper `getattr()` calls
+- AI sensors trigger update immediately when added to HA
+- Better logging: "Adding AI sensors (provider: openai)"
+
+### Technical
+- Workaround for broken `get_discovered_device_data()` in sense_energy library
+- AI sensors now properly call their `async_update()` method on startup
+- Removed feature-based filtering (all AI sensors added when enabled)
+
+**Binary sensors and switches should now work! AI sensors should start generating!**
+
 ## [2.0.3] - 2025-10-16
 
 ### Changed - UX Improvements

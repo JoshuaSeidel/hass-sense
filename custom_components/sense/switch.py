@@ -24,13 +24,15 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][config_entry.entry_id]["coordinator"]
     gateway = hass.data[DOMAIN][config_entry.entry_id]["gateway"]
 
-    # Get all discovered devices that are controllable (smart plugs)
-    devices = await gateway.get_discovered_device_data()
+    # Get devices from gateway (already fetched)
+    # Don't use get_discovered_device_data() - it's broken in the library
+    devices = getattr(gateway, 'devices', [])
     
     # Filter for devices that have control capability
     controllable_devices = [
         device for device in devices
-        if device.get("is_controllable", False) or "plug" in device.get("tags", [])
+        if getattr(device, 'is_controllable', False) or 
+           'plug' in getattr(device, 'tags', [])
     ]
     
     entities = [

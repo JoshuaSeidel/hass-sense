@@ -27,8 +27,9 @@ async def async_setup_entry(
     realtime_coordinator = data["realtime_coordinator"]
     gateway = data["gateway"]
 
-    # Get all discovered devices
-    devices = await gateway.get_discovered_device_data()
+    # Get devices from coordinator data (already fetched)
+    # Don't use get_discovered_device_data() - it's broken in the library
+    devices = getattr(gateway, 'devices', [])
     
     entities = [
         SenseDeviceBinarySensor(

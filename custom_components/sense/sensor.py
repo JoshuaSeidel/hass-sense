@@ -271,7 +271,7 @@ async def async_setup_entry(
     # Add AI sensors if enabled
     ai_config = data.get("ai_config")
     if ai_config and ai_config.enabled:
-        _LOGGER.info("Adding AI sensors")
+        _LOGGER.info("Adding AI sensors (provider: %s)", ai_config.provider)
         from .ai_sensor import (
             SenseDailyInsightsSensor,
             SenseSolarCoachSensor,
@@ -284,70 +284,48 @@ async def async_setup_entry(
         
         ai_features = data.get("ai_features", {})
         
-        # Add enabled AI sensors based on features
-        if ai_config.features.get("daily_insights", True):
-            entities.append(
-                SenseDailyInsightsSensor(
-                    realtime_coordinator,
-                    trend_coordinator,
-                    ai_features.get("daily_insights"),
-                    gateway.sense_monitor_id,
-                )
-            )
-        
-        if ai_config.features.get("solar_coach", True):
-            entities.append(
-                SenseSolarCoachSensor(
-                    realtime_coordinator,
-                    ai_features.get("solar_coach"),
-                    gateway.sense_monitor_id,
-                )
-            )
-        
-        if ai_config.features.get("bill_forecast", True):
-            entities.append(
-                SenseBillForecastSensor(
-                    trend_coordinator,
-                    ai_features.get("bill_forecast"),
-                    gateway.sense_monitor_id,
-                )
-            )
-        
-        if ai_config.features.get("weekly_story", True):
-            entities.append(
-                SenseWeeklyStorySensor(
-                    trend_coordinator,
-                    ai_features.get("weekly_story"),
-                    gateway.sense_monitor_id,
-                )
-            )
-        
-        if ai_config.features.get("optimization_suggestions", True):
-            entities.append(
-                SenseOptimizationSensor(
-                    realtime_coordinator,
-                    ai_features.get("optimization"),
-                    gateway.sense_monitor_id,
-                )
-            )
-        
-        if ai_config.features.get("comparative_analysis", False):
-            entities.append(
-                SenseComparativeSensor(
-                    trend_coordinator,
-                    ai_features.get("comparative"),
-                    gateway.sense_monitor_id,
-                )
-            )
-        
-        # Always add anomaly explanation if AI enabled
-        entities.append(
+        # Add all AI sensors (they'll update based on their own schedules)
+        entities.extend([
+            SenseDailyInsightsSensor(
+                realtime_coordinator,
+                trend_coordinator,
+                ai_features.get("daily_insights"),
+                gateway.sense_monitor_id,
+            ),
+            SenseSolarCoachSensor(
+                realtime_coordinator,
+                ai_features.get("solar_coach"),
+                gateway.sense_monitor_id,
+            ),
+            SenseBillForecastSensor(
+                trend_coordinator,
+                ai_features.get("bill_forecast"),
+                gateway.sense_monitor_id,
+            ),
+            SenseWeeklyStorySensor(
+                trend_coordinator,
+                ai_features.get("weekly_story"),
+                gateway.sense_monitor_id,
+            ),
+            SenseOptimizationSensor(
+                realtime_coordinator,
+                ai_features.get("optimization"),
+                gateway.sense_monitor_id,
+            ),
+            SenseComparativeSensor(
+                trend_coordinator,
+                ai_features.get("comparative"),
+                gateway.sense_monitor_id,
+            ),
             SenseAnomalyExplanationSensor(
                 realtime_coordinator,
                 ai_features.get("anomaly_explainer"),
                 gateway.sense_monitor_id,
-            )
-        )
+            ),
+        ])
+        _LOGGER.info("Added %d AI sensors", len([e for e in entities if "AI" in str(type(e))]))
+    else:
+        _LOGGER.info("AI features disabled, skipping AI sensors")
 
     async_add_entities(entities)
 
