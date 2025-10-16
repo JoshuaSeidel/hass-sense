@@ -184,8 +184,8 @@ class SenseAIEngine:
             
             # If user specified an agent_id, use that first
             agent_ids_to_try = []
-            if self.config.agent_id:
-                agent_ids_to_try.append(self.config.agent_id)
+            if self.config.agent_id and self.config.agent_id.strip():
+                agent_ids_to_try.append(self.config.agent_id.strip())
                 _LOGGER.info("Using configured agent_id: %s", self.config.agent_id)
             
             # Add fallback agent IDs
@@ -209,7 +209,15 @@ class SenseAIEngine:
                     _LOGGER.info("Successfully used agent_id: %s", agent_id)
                     return result
                 except Exception as ex:
-                    _LOGGER.debug("Agent %s failed: %s", agent_id, ex)
+                    error_msg = str(ex)
+                    _LOGGER.debug("Agent %s failed: %s", agent_id, error_msg)
+                    
+                    # If it's an invalid agent ID error, skip to next agent
+                    if "invalid agent ID" in error_msg.lower():
+                        _LOGGER.warning("Agent ID '%s' is invalid, trying next option", agent_id)
+                        last_error = ex
+                        continue
+                    
                     last_error = ex
                     continue
             

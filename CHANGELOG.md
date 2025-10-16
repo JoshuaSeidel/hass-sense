@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.10] - 2025-10-16
+
+### Fixed - Agent ID Validation
+- **"invalid agent ID" error**: Fixed crash when agent_id is invalid
+  - Now catches "invalid agent ID" errors and tries next agent
+  - Strips whitespace from configured agent_id
+  - Handles empty agent_id strings gracefully
+  - Logs warning and continues to fallback agents
+- **Options flow crash**: Fixed `TypeError: SenseOptionsFlow() takes no arguments`
+  - Added proper `__init__` method that accepts config_entry
+  - Calls `super().__init__()` correctly
+  - No longer stores config_entry (uses inherited property)
+
+### Changed
+- Better error handling for invalid agent IDs
+- Logs "Agent ID 'X' is invalid, trying next option"
+- Continues to fallback agents instead of crashing
+- Strips whitespace from user-entered agent_id
+
+### Technical
+- Added `agent_id.strip()` check before use
+- Added "invalid agent ID" detection in error messages
+- Fixed SenseOptionsFlow constructor
+- Better error logging and recovery
+
+**Invalid agent IDs now handled gracefully!**
+
 ## [2.0.9] - 2025-10-16
 
 ### Added - Conversation Agent ID Configuration
