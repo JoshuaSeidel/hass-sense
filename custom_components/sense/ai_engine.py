@@ -141,59 +141,65 @@ class SenseAIEngine:
             _LOGGER.error("Error calling LLM for %s: %s", feature, ex)
             return f"Error generating AI response: {ex}"
     
-    async def _call_ha_conversation(self, prompt: str) -> str:
+    async def _call_ha_conversation(self, prompt: str, agent_id: str | None = None) -> str:
         """Call Home Assistant conversation integration."""
         try:
+            service_data = {"text": prompt}
+            if agent_id:
+                service_data["agent_id"] = agent_id
+            
             response = await self.hass.services.async_call(
                 "conversation",
                 "process",
-                {"text": prompt},
+                service_data,
                 blocking=True,
                 return_response=True,
             )
-            return response.get("response", {}).get("speech", {}).get("plain", {}).get("speech", "No response")
+            
+            # Extract response text from conversation response
+            speech = response.get("response", {}).get("speech", {})
+            if isinstance(speech, dict):
+                return speech.get("plain", {}).get("speech", "No response")
+            return str(speech) if speech else "No response"
         except Exception as ex:
-            _LOGGER.error("Error calling HA conversation: %s", ex)
+            _LOGGER.error("Error calling HA conversation: %s", ex, exc_info=True)
             raise
     
     async def _call_openai(self, prompt: str, max_tokens: int) -> str:
-        """Call OpenAI API directly."""
+        """Call OpenAI via conversation integration."""
         try:
-            # Use HA's OpenAI integration if available
-            response = await self.hass.services.async_call(
-                "openai_conversation",
-                "generate_response",
-                {
-                    "prompt": prompt,
-                    "max_tokens": max_tokens,
-                },
-                blocking=True,
-                return_response=True,
-            )
-            return response.get("text", "No response")
+            # Look for OpenAI conversation agent
+            # Common agent IDs: "conversation.openai", "openai"
+            _LOGGER.info("Calling OpenAI via conversation integration")
+            
+            # Try with agent_id first
+            try:
+                return await self._call_ha_conversation(prompt, agent_id="conversation.openai")
+            except Exception:
+                # Fallback to default conversation agent
+                _LOGGER.warning("OpenAI agent not found, using default conversation agent")
+                return await self._call_ha_conversation(prompt)
         except Exception as ex:
             _LOGGER.error("Error calling OpenAI: %s", ex)
             raise
     
     async def _call_anthropic(self, prompt: str, max_tokens: int) -> str:
-        """Call Anthropic API directly."""
+        """Call Anthropic via conversation integration."""
         try:
-            # Use HA's Anthropic integration if available
-            response = await self.hass.services.async_call(
-                "anthropic",
-                "generate_response",
-                {
-                    "prompt": prompt,
-                    "max_tokens": max_tokens,
-                },
-                blocking=True,
-                return_response=True,
-            )
-            return response.get("text", "No response")
+            # Look for Anthropic conversation agent
+            # Common agent IDs: "conversation.anthropic", "anthropic"
+            _LOGGER.info("Calling Anthropic via conversation integration")
+            
+            # Try with agent_id first
+            try:
+                return await self._call_ha_conversation(prompt, agent_id="conversation.anthropic")
+            except Exception:
+                # Fallback to default conversation agent
+                _LOGGER.warning("Anthropic agent not found, using default conversation agent")
+                return await self._call_ha_conversation(prompt)
         except Exception as ex:
             _LOGGER.error("Error calling Anthropic: %s", ex)
-            # Fallback to conversation
-            return await self._call_ha_conversation(prompt)
+            raise
     
     async def _call_built_in(self, prompt: str, context: dict, feature: str) -> str:
         """Built-in rule-based responses (fallback)."""
