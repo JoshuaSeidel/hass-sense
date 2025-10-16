@@ -136,6 +136,10 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
             CONF_REALTIME_UPDATE_RATE, ACTIVE_UPDATE_RATE
         )
         
+        ai_enabled = self.config_entry.data.get("ai_enabled", False)
+        ai_provider = self.config_entry.data.get("ai_provider", "ha_conversation")
+        ai_token_budget = self.config_entry.data.get("ai_token_budget", "medium")
+        
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
@@ -144,8 +148,32 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
                         CONF_REALTIME_UPDATE_RATE,
                         default=current_rate,
                     ): vol.In({int(k): v for k, v in UPDATE_RATE_OPTIONS.items()}),
+                    vol.Optional(
+                        "ai_enabled",
+                        default=ai_enabled,
+                    ): bool,
+                    vol.Optional(
+                        "ai_provider",
+                        default=ai_provider,
+                    ): vol.In({
+                        "ha_conversation": "Home Assistant Conversation (Recommended)",
+                        "openai": "OpenAI Direct",
+                        "anthropic": "Anthropic Direct",
+                        "built_in": "Built-in (Free, Limited)",
+                    }),
+                    vol.Optional(
+                        "ai_token_budget",
+                        default=ai_token_budget,
+                    ): vol.In({
+                        "low": "Low (~$1-2/month) - Essential features",
+                        "medium": "Medium (~$3-5/month) - Recommended",
+                        "high": "High (~$8-12/month) - All features",
+                    }),
                 }
             ),
+            description_placeholders={
+                "ai_info": "AI features provide intelligent insights, bill forecasting, anomaly detection, and more. See AI_FEATURES.md for details."
+            },
         )
 
 
