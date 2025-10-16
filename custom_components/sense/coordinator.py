@@ -72,8 +72,9 @@ class SenseRealtimeCoordinator(SenseCoordinator):
         """Retrieve latest realtime state and return data dict."""
         try:
             await self._gateway.update_realtime()
-            _LOGGER.debug(
-                "Realtime update: %sW, Solar: %sW",
+            _LOGGER.info(
+                "Realtime update (%ss interval): %sW, Solar: %sW",
+                self.update_interval.total_seconds(),
                 self._gateway.active_power,
                 self._gateway.active_solar_power,
             )
