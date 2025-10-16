@@ -19,7 +19,14 @@ from .const import (
     DEFAULT_TIMEOUT,
     ACTIVE_UPDATE_RATE,
 )
-from .sense_api import SenseableAsync
+
+try:
+    from sense_energy import ASyncSenseable
+    USE_OFFICIAL_LIB = True
+except ImportError:
+    from .sense_api import SenseableAsync as ASyncSenseable
+    USE_OFFICIAL_LIB = False
+    _LOGGER.warning("Using fallback sense_api. Install sense_energy for better support.")
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,16 +42,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     client_session = async_get_clientsession(hass)
 
-    gateway = SenseableAsync(email, password, timeout, client_session)
-
-    try:
-        await gateway.authenticate()
-    except SENSE_TIMEOUT_EXCEPTIONS as err:
-        raise ConfigEntryNotReady(
-            f"Timeout during authentication: {err}"
-        ) from err
-    except SENSE_WEBSOCKET_EXCEPTIONS as err:
-        raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
+    if USE_OFFICIAL_LIB:
+        _LOGGER.info("Using official sense_energy library")
+        gateway = ASyncSenseable(api_timeout=timeout, wss_timeout=timeout, client_session=client_session)
+        try:
+            await gateway.authenticate(email, password)
+            await gateway.get_monitor_data()
+            await gateway.update_realtime()
+        except Exception as err:
+            _LOGGER.error("Authentication failed: %s", err)
+            raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
+    else:
+        _LOGGER.info("Using custom sense_api implementation")
+        gateway = ASyncSenseable(email, password, timeout, client_session)
+        try:
+            await gateway.authenticate()
+        except SENSE_TIMEOUT_EXCEPTIONS as err:
+            raise ConfigEntryNotReady(
+                f"Timeout during authentication: {err}"
+            ) from err
+        except SENSE_WEBSOCKET_EXCEPTIONS as err:
+            raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
 
     async def async_update_data():
         """Fetch data from Sense."""

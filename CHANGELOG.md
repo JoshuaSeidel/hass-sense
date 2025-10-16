@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-10-15
+
+### Changed
+- **MAJOR**: Now uses official `sense_energy` library's `ASyncSenseable` class
+- Switched from REST API to WebSocket for realtime data (official library handles this)
+- Follows same pattern as official Home Assistant Sense integration
+
+### Fixed
+- Realtime power data now works correctly via WebSocket connection
+- No longer relies on deprecated `/status` REST endpoint
+
+### Added
+- Automatic fallback to custom implementation if sense_energy library not available
+- Better compatibility with official sense_energy library updates
+
+**This should fix all data retrieval issues!**
+
 ## [1.1.4] - 2025-10-15
 
 ### Added
