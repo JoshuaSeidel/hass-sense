@@ -24,19 +24,17 @@
   "options": {
     "step": {
       "init": {
-        "title": "Sense Options",
-        "description": "Configure Sense integration settings including AI features",
+        "title": "Sense Energy Monitor Options",
+        "description": "Configure update rate and AI features",
         "data": {
-          "realtime_update_rate": "Realtime Update Rate",
-          "ai_enabled": "Enable AI Features",
+          "realtime_update_rate": "Real-time Update Rate",
           "ai_provider": "AI Provider",
-          "ai_token_budget": "AI Token Budget"
+          "ai_token_budget": "Monthly Token Budget"
         },
         "data_description": {
-          "realtime_update_rate": "How often to update power/voltage sensors (5s = near real-time, 60s = default)",
-          "ai_enabled": "Enable AI-powered insights, forecasting, and recommendations",
-          "ai_provider": "Which AI service to use (requires conversation integration or API key)",
-          "ai_token_budget": "Controls AI usage frequency and cost. See AI_FEATURES.md for details."
+          "realtime_update_rate": "How often to fetch power data. Lower values are more responsive but use more API calls.",
+          "ai_provider": "Select an AI provider for intelligent insights and forecasting. Choose 'Disabled' to turn off AI features.",
+          "ai_token_budget": "Estimated monthly cost for AI features. Higher budgets enable more frequent updates and advanced features."
         }
       }
     }

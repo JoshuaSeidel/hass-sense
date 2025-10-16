@@ -125,6 +125,10 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Manage the options."""
         if user_input is not None:
+            # Enable AI if provider is selected (not "none")
+            ai_provider = user_input.get("ai_provider", "none")
+            user_input["ai_enabled"] = ai_provider != "none"
+            
             # Update the config entry with new options
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
@@ -136,43 +140,52 @@ class SenseOptionsFlow(config_entries.OptionsFlow):
             CONF_REALTIME_UPDATE_RATE, ACTIVE_UPDATE_RATE
         )
         
-        ai_enabled = self.config_entry.data.get("ai_enabled", False)
-        ai_provider = self.config_entry.data.get("ai_provider", "ha_conversation")
+        ai_provider = self.config_entry.data.get("ai_provider", "none")
         ai_token_budget = self.config_entry.data.get("ai_token_budget", "medium")
+        
+        # Check which integrations are available
+        provider_options = {
+            "none": "Disabled - No AI Features",
+            "ha_conversation": "Home Assistant Conversation (Free - Uses your default agent)",
+        }
+        
+        # Check if OpenAI conversation is available
+        if "openai_conversation" in self.hass.config.components:
+            provider_options["openai"] = "OpenAI Integration (Requires API key)"
+        
+        # Check if Anthropic conversation is available
+        # Anthropic conversation integration domain varies, check common ones
+        if any(domain in self.hass.config.components for domain in ["anthropic", "anthropic_conversation"]):
+            provider_options["anthropic"] = "Anthropic Conversation (Requires API key)"
+        
+        # Build schema dynamically based on AI provider selection
+        schema_dict = {
+            vol.Required(
+                CONF_REALTIME_UPDATE_RATE,
+                default=current_rate,
+            ): vol.In({int(k): v for k, v in UPDATE_RATE_OPTIONS.items()}),
+            vol.Required(
+                "ai_provider",
+                default=ai_provider,
+            ): vol.In(provider_options),
+        }
+        
+        # Only show token budget if AI is enabled
+        if ai_provider != "none":
+            schema_dict[vol.Required(
+                "ai_token_budget",
+                default=ai_token_budget,
+            )] = vol.In({
+                "low": "Low (~$1-2/month) - Essential features only",
+                "medium": "Medium (~$3-5/month) - Recommended",
+                "high": "High (~$8-12/month) - All features, real-time",
+            })
         
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(
-                        CONF_REALTIME_UPDATE_RATE,
-                        default=current_rate,
-                    ): vol.In({int(k): v for k, v in UPDATE_RATE_OPTIONS.items()}),
-                    vol.Optional(
-                        "ai_enabled",
-                        default=ai_enabled,
-                    ): bool,
-                    vol.Optional(
-                        "ai_provider",
-                        default=ai_provider,
-                    ): vol.In({
-                        "ha_conversation": "Home Assistant Conversation (Recommended)",
-                        "openai": "OpenAI Direct",
-                        "anthropic": "Anthropic Direct",
-                        "built_in": "Built-in (Free, Limited)",
-                    }),
-                    vol.Optional(
-                        "ai_token_budget",
-                        default=ai_token_budget,
-                    ): vol.In({
-                        "low": "Low (~$1-2/month) - Essential features",
-                        "medium": "Medium (~$3-5/month) - Recommended",
-                        "high": "High (~$8-12/month) - All features",
-                    }),
-                }
-            ),
+            data_schema=vol.Schema(schema_dict),
             description_placeholders={
-                "ai_info": "AI features provide intelligent insights, bill forecasting, anomaly detection, and more. See AI_FEATURES.md for details."
+                "info": "Configure update rate and AI features. AI provides intelligent insights, bill forecasting, and recommendations."
             },
         )
 

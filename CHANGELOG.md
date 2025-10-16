@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2025-10-16
+
+### Changed - UX Improvements
+- **Cleaner Config UI**: Removed overlapping text, better labels
+- **AI Provider Selection**: Changed from checkbox to dropdown
+  - "Disabled - No AI Features" (default)
+  - "Home Assistant Conversation (Free - Uses your default agent)"
+  - "OpenAI Integration (Requires API key)" - only shown if installed
+  - "Anthropic Conversation (Requires API key)" - only shown if installed
+- **Removed "Built-in" AI**: There's no such thing as free AI, removed misleading option
+- **Dynamic Options**: Token budget only shown when AI provider selected
+- **Better Labels**: Changed from variable names to user-friendly text
+  - "ai_enabled" → removed (now implicit based on provider)
+  - "ai_provider" → "AI Provider"
+  - "ai_token_budget" → "Monthly Token Budget"
+  - "realtime_update_rate" → "Real-time Update Rate"
+
+### Fixed
+- AI enabled automatically when provider selected (not "none")
+- Provider options only show installed integrations
+- No more confusing "Built-in (Free, Limited)" option
+
+### Documentation
+- **README.md**: Completely updated with all v2.0 features
+- Added AI features section with all 7 sensors and 7 services
+- Added automation examples for AI features
+- Better organization and feature highlights
+- Added "What Makes This Different" section
+
+**Much cleaner and more intuitive config experience!**
+
 ## [2.0.2] - 2025-10-16
 
 ### Fixed
